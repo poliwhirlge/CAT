@@ -3,7 +3,7 @@ import C3toolbox
 import sys
 import os
 sys.argv=["Main"]
-import Tkinter
+import tkinter
 
 global instrument_var
 global expression_var
@@ -31,7 +31,7 @@ def launch():
     global fldRowTxt
     global form
     C3toolbox.startup()
-    form = Tkinter.Tk()
+    form = tkinter.Tk()
     form.wm_title('Create animation markers')
 
     instrument_name = C3toolbox.get_trackname()
@@ -41,49 +41,49 @@ def launch():
     else:
         instrument_id = 0
     
-    helpLf = Tkinter.Frame(form)
+    helpLf = tkinter.Frame(form)
     helpLf.grid(row=0, column=1, sticky='NS', padx=5, pady=5)
 
-    inFileLbl = Tkinter.Label(helpLf, text="Select instrument")
+    inFileLbl = tkinter.Label(helpLf, text="Select instrument")
     inFileLbl.grid(row=1, column=1, sticky='E', padx=5, pady=2)
 
     OPTIONS = ["Drums", "Guitar", "Bass", "Keys", "Pro Keys", "2x Drums", "Rhythm", "Vocals"]
 
-    instrument_var = Tkinter.StringVar(helpLf)
+    instrument_var = tkinter.StringVar(helpLf)
     instrument_var.set(OPTIONS[instrument_id]) # default value
 
-    instrumentOpt = apply(Tkinter.OptionMenu, (helpLf, instrument_var) + tuple(OPTIONS))
+    instrumentOpt = tkinter.OptionMenu(*(helpLf, instrument_var) + tuple(OPTIONS))
     instrumentOpt.grid(row=0, column=1, columnspan=1, sticky="WE", pady=3)
 
-    expressionLbl = Tkinter.Label(helpLf, text="Select expression")
+    expressionLbl = tkinter.Label(helpLf, text="Select expression")
     expressionLbl.grid(row=1, column=2, sticky='E', padx=5, pady=2)
 
     OPTIONS = ["play", "mellow", "intense"]
 
-    expression_var = Tkinter.StringVar(helpLf)
+    expression_var = tkinter.StringVar(helpLf)
     expression_var.set(OPTIONS[0]) # default value
 
-    expressionOpt = apply(Tkinter.OptionMenu, (helpLf, expression_var) + tuple(OPTIONS))
+    expressionOpt = tkinter.OptionMenu(*(helpLf, expression_var) + tuple(OPTIONS))
     expressionOpt.grid(row=0, column=2, columnspan=1, sticky="WE", pady=3)
 
-    fldLbl = Tkinter.Label(helpLf, \
+    fldLbl = tkinter.Label(helpLf, \
                            text="Pause in tick between notes to trigger an idle event")
     fldLbl.grid(row=1, column=3, padx=5, pady=2, sticky='W')
-    var = Tkinter.StringVar()
-    fldRowTxt = Tkinter.Entry(helpLf, textvariable=var)
+    var = tkinter.StringVar()
+    fldRowTxt = tkinter.Entry(helpLf, textvariable=var)
     var.set('default')
     fldRowTxt.grid(row=0, column=3, columnspan=1, padx=5, pady=2, sticky='W')
 
-    halveselBtn = Tkinter.Button(helpLf, text="Create markers", command= lambda: execute()) 
+    halveselBtn = tkinter.Button(helpLf, text="Create markers", command= lambda: execute()) 
     halveselBtn.grid(row=0, column=4, rowspan=2, sticky="NS", padx=5, pady=2)
 
-    logo = Tkinter.Frame(form, bg="#000")
+    logo = tkinter.Frame(form, bg="#000")
     logo.grid(row=2, column=0, columnspan=10, sticky='WE', \
                  padx=0, pady=0, ipadx=0, ipady=0)
 
     path = os.path.join( sys.path[0], "banner.gif" )
-    img = Tkinter.PhotoImage(file=path)
-    imageLbl = Tkinter.Label(logo, image = img, borderwidth=0)
+    img = tkinter.PhotoImage(file=path)
+    imageLbl = tkinter.Label(logo, image = img, borderwidth=0)
     imageLbl.grid(row=0, column=0, rowspan=2, sticky='E', padx=0, pady=0)
 
     form.mainloop()

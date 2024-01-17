@@ -106,19 +106,17 @@ import base64
 import string
 import webbrowser
 from collections import Counter
-from ConfigParser import SafeConfigParser
+from configparser import ConfigParser
 from reaper_python import *
 from reaper_python import RPR_ShowConsoleMsg as console_msg
-
-# Reload the encoding in order to use Unicode so we don't choke on anything non-ASCII.
-reload(sys)
-sys.setdefaultencoding('utf8')
+import importlib
+import codecs
 
 # Clear the console before we start writing to it.
 console_msg("")
 
 # (start) Config section
-parser = SafeConfigParser()
+parser = ConfigParser()
 parser.read( os.path.join( sys.path[0], "rbn_config.ini" ) )
 OUTPUT_FILE = os.path.join( sys.path[0], "debug/debug_file.txt" )
 OUTPUT_HTML_FILE = os.path.join( sys.path[0], "output/results.html" )
@@ -141,7 +139,7 @@ dTmpl = {}
 global_harm2_phase_start = []
 global_harm2_phase_end = []
 
-note_regex = "(?:^<([X,x]\s[a-f,0-9]+\s[a-f,0-9]+.*$)|^([E,e]\s[a-f,0-9]+\s[a-f,0-9]+\s[a-f,0-9]+\s[a-f,0-9]+).*)$"
+note_regex = r"(?:^<([X,x]\s[a-f,0-9]+\s[a-f,0-9]+.*$)|^([E,e]\s[a-f,0-9]+\s[a-f,0-9]+\s[a-f,0-9]+\s[a-f,0-9]+).*)$"
 
 
 var_sets = [
@@ -276,6 +274,28 @@ for elem in var_sets:
 
 #These variables control if we have a certain instrument or track
 has_drums, has_drums_2x, has_bass, has_guitar, has_rhythm, has_vocals, has_harm1, has_harm2, has_harm3, has_keys, has_prokeys = (False, False, False, False, False, False, False, False, False, False, False)
+
+def decode_base64_to_str(input):
+    
+    output = input
+
+    try:
+        output = base64.b64decode(output)
+        output = output[2:]
+        #console_msg(f"b64 decode: {output}\n")
+    except:
+
+        try:
+            str.encode(output)
+            output = str.encode(output)
+        except:
+            console_msg(f"failed b64 decode: {output}\n")
+
+    output = codecs.decode(output, 'utf-8')
+    output = str(output)
+
+    return output
+
 
 # (start) Funciones de manejo de instrumentos
 def handle_drums( content, part_name ):
@@ -412,10 +432,10 @@ def handle_drums( content, part_name ):
             debug( "=================== " + diff_name[diff_index].upper() + " DRUMS: Gem Validation ===================", True )
 
             # Get all the notes that were used.
-            for notes_item in filter(lambda x: x.value == notes_start[diff_index], l_gems):
+            for notes_item in [x for x in l_gems if x.value == notes_start[diff_index]]:
                 notes_kick[notes_item.pos] += 1
 
-            for notes_item in filter(lambda x: ( x.value >= (notes_start[diff_index] + 1) and x.value <= (notes_start[diff_index] + 4) ) , l_gems):
+            for notes_item in [x for x in l_gems if ( x.value >= (notes_start[diff_index] + 1) and x.value <= (notes_start[diff_index] + 4) )]:
                 notes_pads[notes_item.pos] += 1
 
             debug(str(len(notes_kick)), True)
@@ -524,11 +544,11 @@ def handle_drums( content, part_name ):
             debug( "", True )
             debug( "=================== ANIMATION BUT NO PRO MARKER ===================", True )
             all_tom_anim = Counter()
-            for notes_item in filter(lambda x: x.value == 46 or x.value == 47 or x.value == 48 or x.value == 49 or x.value == 50 or x.value == 51 , l_gems):
+            for notes_item in [x for x in l_gems if x.value == 46 or x.value == 47 or x.value == 48 or x.value == 49 or x.value == 50 or x.value == 51]:
                 all_tom_anim[ notes_item.pos ] = 1
                 
             for midi_note_pos in all_tom_anim:
-                if not( filter(lambda x: ( x.value in [ 110, 111, 112 ] ) and x.pos == midi_note_pos, l_gems) ):            
+                if not( [x for x in l_gems if ( x.value in [ 110, 111, 112 ] ) and x.pos == midi_note_pos] ):            
                     debug( "Tom Marker not found for Drum Animation at {}".format( format_location( midi_note_pos ) ) , True )
                         
                     localTmpl[ drumtype + '_tom_marker'] += '<div class="row-fluid"><span class="span12"><strong>{}</strong> tom marker not found in drum animations</span></div>'.format( format_location( midi_note_pos ) )
@@ -546,17 +566,17 @@ def handle_drums( content, part_name ):
         overlap_fill_overdrive_end = []
         overlap_fill_drum_roll = []
         #Start notes
-        for notes_item in filter(lambda x: x.value == 120 , l_gems):
+        for notes_item in [x for x in l_gems if x.value == 120]:
             fill_start.append( notes_item.pos )
             debug( "Found {} at {} - ( {}, {} )".format( num_to_text[ notes_item.value ], format_location( notes_item.pos ),notes_item.value, notes_item.pos ), True ) 
         #End notes
-        for notes_item in filter(lambda x: x.value == 120 , r_gems):
+        for notes_item in [x for x in r_gems if x.value == 120]:
             fill_end.append( notes_item.pos )            
             debug( "Found {} at {} - ( {}, {} )".format( num_to_text[ notes_item.value ], format_location( notes_item.pos ),notes_item.value, notes_item.pos ), True )         
         #Check for OD and drum rolls inside any DRUM fills
         for midi_check in [116, 126]:
             for index, item in enumerate(fill_start):
-                for od_midi_note in filter(lambda x: x.value == midi_check and ( x.pos >= item and x.pos <= fill_end[index] ), ( r_gems + l_gems )):
+                for od_midi_note in [x for x in ( r_gems + l_gems ) if x.value == midi_check and ( x.pos >= item and x.pos <= fill_end[index] )]:
                     if( midi_check == 116 ):
                         #If the od ends right before the drum fill give a warning
                         if( od_midi_note.pos == item ):
@@ -599,26 +619,26 @@ def handle_drums( content, part_name ):
         debug( "", True )
         debug( "=================== GENERAL DRUMS: No gems under solo marker ===================", True )
         #Start notes
-        for notes_item in filter(lambda x: x.value == 103 , l_gems):
+        for notes_item in [x for x in l_gems if x.value == 103]:
             solo_start.append( notes_item.pos )
             debug_extra( "Found start {} at {} - ( {}, {} )".format( num_to_text[ notes_item.value ], format_location( notes_item.pos ),notes_item.value, notes_item.pos ), True ) 
         #End notes
-        for notes_item in filter(lambda x: x.value == 103 , r_gems):
+        for notes_item in [x for x in r_gems if x.value == 103]:
             solo_end.append( notes_item.pos )            
             debug_extra( "Found end {} at {} - ( {}, {} )".format( num_to_text[ notes_item.value ], format_location( notes_item.pos ),notes_item.value, notes_item.pos ), True )        
         #Check for any gem under solo marker... we need at least one gem for the solo to be valid
         for index, item in enumerate(solo_start):
             gems_text = '';
-            if ( filter(lambda x: x.value >=60 and x.value <=64 and x.pos >= item and x.pos <= solo_end[index], l_gems) ):
+            if ( [x for x in l_gems if x.value >=60 and x.value <=64 and x.pos >= item and x.pos <= solo_end[index]] ):
                 counter[ item ] += 1
                 gems_text += 'Easy + '
-            if ( filter(lambda x: x.value >=72 and x.value <=76 and x.pos >= item and x.pos <= solo_end[index], l_gems) ):
+            if ( [x for x in l_gems if x.value >=72 and x.value <=76 and x.pos >= item and x.pos <= solo_end[index]] ):
                 counter[ item ] += 1
                 gems_text += 'Medium + '
-            if ( filter(lambda x: x.value >=84 and x.value <=88 and x.pos >= item and x.pos <= solo_end[index], l_gems) ):
+            if ( [x for x in l_gems if x.value >=84 and x.value <=88 and x.pos >= item and x.pos <= solo_end[index]] ):
                 counter[ item ] += 1
                 gems_text += 'Hard + '
-            if ( filter(lambda x: x.value >=96 and x.value <=100 and x.pos >= item and x.pos <= solo_end[index], l_gems) ):
+            if ( [x for x in l_gems if x.value >=96 and x.value <=100 and x.pos >= item and x.pos <= solo_end[index]] ):
                 counter[ item ] += 1
                 gems_text += 'Expert + '
             
@@ -631,14 +651,14 @@ def handle_drums( content, part_name ):
         debug( "=================== ENDS GENERAL DRUMS: No gems under solo marker ===================", True )
         #Get all positions for ods
         drums_pos_od = []
-        for notes_item in filter(lambda x: x.value == 116 , l_gems):
+        for notes_item in [x for x in l_gems if x.value == 116]:
             drums_pos_od.append( int ( notes_item.pos / 1920 ) + 1 )
         #
-        total_kicks_x = len( filter(lambda x: x.value == 96, l_gems) )
-        total_kicks_h = len( filter(lambda x: x.value == 84, l_gems) )
-        total_kicks_m = len( filter(lambda x: x.value == 72, l_gems) )
-        total_kicks_e = len( filter(lambda x: x.value == 60, l_gems) )
-        total_ods         = len( filter(lambda x: x.value == 116, l_gems) )
+        total_kicks_x = len( [x for x in l_gems if x.value == 96] )
+        total_kicks_h = len( [x for x in l_gems if x.value == 84] )
+        total_kicks_m = len( [x for x in l_gems if x.value == 72] )
+        total_kicks_e = len( [x for x in l_gems if x.value == 60] )
+        total_ods         = len( [x for x in l_gems if x.value == 116] )
         total_fills     = len( fill_start )
         #
         debug( "", True )
@@ -673,9 +693,9 @@ def handle_drums( content, part_name ):
         phrases_p1 = 0
         phrases_p2 = 0
 
-        for notes_item in filter(lambda x: x.value == 105 , l_gems):
+        for notes_item in [x for x in l_gems if x.value == 105]:
             phrases_p1 += 1
-        for notes_item in filter(lambda x: x.value == 106 , l_gems):
+        for notes_item in [x for x in l_gems if x.value == 106]:
             phrases_p2 += 1
 
         if phrases_p1 > 0 or phrases_p2 > 0:
@@ -801,10 +821,10 @@ def handle_guitar(content, part_name ):
         counter_positions = Counter() #All positions with 3 gems chord having G+O        
         counter_global = Counter()                
         extra_gems_chords = Counter()
-        for notes_item in filter(lambda x: ( x.value == 97 or x.value == 98 or x.value == 99 ) , l_gems):
+        for notes_item in [x for x in l_gems if ( x.value == 97 or x.value == 98 or x.value == 99 )]:
             #We got all red, yellow and blue notes positions, now we want to seearch if there is any other gem in the same position being ggreen AND orange
             #How many G+O we have?
-            if( len( filter(lambda x: x.pos == notes_item.pos and ( x.value == 96 or x.value == 100) , l_gems) ) == 2 ):
+            if( len( [x for x in l_gems if x.pos == notes_item.pos and ( x.value == 96 or x.value == 100)] ) == 2 ):
                 extra_gems_chords[ ( notes_item.pos, notes_item.value ) ] += 1
                 if( counter_positions[ notes_item.pos ] < 1 ):
                     counter_positions[notes_item.pos] += 1
@@ -825,7 +845,7 @@ def handle_guitar(content, part_name ):
         debug( "=================== EXPERT " + part_name + ": 4 notes Chords ===================", True )        
         for index, item in enumerate(l_gems):
             if( counter[ item.pos ] < 1 ):
-                for midi_note in filter(lambda x: x.pos == item.pos and ( x.value >= 96 and x.value <= 100 ), l_gems ):
+                for midi_note in [x for x in l_gems if x.pos == item.pos and ( x.value >= 96 and x.value <= 100 )]:
                     debug_extra( "Found {} at {} - ( {}, {} )".format( num_to_text[ midi_note.value ], format_location( midi_note.pos ), midi_note.value , midi_note.pos ), True ) 
                     counter_internal += 1
                 if( counter_internal >=4 ):
@@ -846,9 +866,9 @@ def handle_guitar(content, part_name ):
         counter_internal = 0    
         debug( "", True )
         debug( "=================== HARD " + part_name + ": 3 notes Chords ===================", True )            
-        for index, item in enumerate(filter(lambda x: x.value >= 84 and x.value <= 88 , l_gems )):
+        for index, item in enumerate([x for x in l_gems if x.value >= 84 and x.value <= 88]):
             if( counter[ item.pos ] < 1 ):
-                for midi_note in filter(lambda x: x.pos == item.pos and ( x.value >= 84 and x.value <= 88 ), l_gems ):
+                for midi_note in [x for x in l_gems if x.pos == item.pos and ( x.value >= 84 and x.value <= 88 )]:
                     debug_extra( "Found {} at {} - ( {}, {} )".format( num_to_text[ midi_note.value ], format_location( midi_note.pos ), midi_note.value , midi_note.pos ), True ) 
                     counter_internal += 1
                 if( counter_internal >=3 ):
@@ -875,7 +895,7 @@ def handle_guitar(content, part_name ):
         debug( "=================== HARD " + part_name + ": Green + Orange chords ===================", True )            
         for index, item in enumerate(l_gems):
             if( counter[ item.pos ] < 1 ):
-                for midi_note in filter(lambda x: x.pos == item.pos and ( x.value == 84 or x.value == 88 ), l_gems ):
+                for midi_note in [x for x in l_gems if x.pos == item.pos and ( x.value == 84 or x.value == 88 )]:
                     debug_extra( "Found {} at {} - ( {}, {} )".format( num_to_text[ midi_note.value ], format_location( midi_note.pos ), midi_note.value , midi_note.pos ), True ) 
                     counter_internal += 1
                 if( counter_internal >=2 ):
@@ -898,7 +918,7 @@ def handle_guitar(content, part_name ):
             counter_internal = 0            
             for index, item in enumerate(l_gems):
                 if( counter[ item.pos ] < 1 ):
-                    for midi_note in filter(lambda x: x.pos == item.pos and ( x.value == item_note[0] or x.value == item_note[1] ), l_gems ):
+                    for midi_note in [x for x in l_gems if x.pos == item.pos and ( x.value == item_note[0] or x.value == item_note[1] )]:
                         debug_extra( "Found {} at {} - ( {}, {} )".format( num_to_text[ midi_note.value ], format_location( midi_note.pos ), midi_note.value , midi_note.pos ), True ) 
                         counter_internal += 1
                     if( counter_internal >=2 ):
@@ -917,7 +937,7 @@ def handle_guitar(content, part_name ):
         debug( "", True )
         debug( "=================== MEDIUM " + part_name + ": No Force hopos ===================", True )            
         #for index, item in enumerate(l_gems):
-        for midi_note in filter(lambda x: x.value == 77 or x.value == 78 , l_gems ):
+        for midi_note in [x for x in l_gems if x.value == 77 or x.value == 78]:
             debug( "ERROR: Found {} at {} - ( {} )".format( num_to_text[ midi_note.value ], format_location( midi_note.pos ), midi_note.pos ), True ) 
                 
             localTmpl[ output_part_var + "_chords_m_hopos"] += '<div class="row-fluid"><span class="span12"><strong class="">{}</strong> <span>Forced HOPOs not allowed</span> </span></div>'.format( format_location( item.pos ) )
@@ -930,7 +950,7 @@ def handle_guitar(content, part_name ):
         debug( "", True )
         debug( "=================== MEDIUM " + part_name + ": No expert chords ===================", True )            
         for item in counter_chord_expert:
-            if( len(filter(lambda x: x.pos == item and ( x.value >= 72 and x.value <= 76 ), l_gems )) == 1 ):
+            if( len([x for x in l_gems if x.pos == item and ( x.value >= 72 and x.value <= 76 )]) == 1 ):
                 debug("Expert chord not found here at {} - ( {} )".format( format_location( item ), item), True)
                 
                 localTmpl[ output_part_var + "_chords_dont_exist"] += '<div class="row-fluid"><span class="span12"><strong class="">{}</strong> <span>Expert chord not found on Medium</span> </span></div>'.format( format_location( item ) )
@@ -942,7 +962,7 @@ def handle_guitar(content, part_name ):
         gems_in_chord = Counter()
         debug( "", True )
         debug( "=================== EASY " + part_name + ": No Chords ===================", True )
-        for notes_item in filter(lambda x: x.value >= 60 and x.value <= 64, l_gems):
+        for notes_item in [x for x in l_gems if x.value >= 60 and x.value <= 64]:
             debug_extra( "Found {} at {} - ( {}, {}): ".format( num_to_text[ notes_item.value ], format_location( notes_item.pos ), notes_item.value , notes_item.pos ), True ) 
             counter_global[(notes_item.pos)] += 1
             gems_in_chord[ ( notes_item.pos, notes_item.value ) ] += 1
@@ -951,13 +971,13 @@ def handle_guitar(content, part_name ):
         for (a, b) in enumerate(counter_global):            
             if( counter_global[b]>1 ):
                 gems_text = ''
-                for x, v in filter(lambda (x,y): x == b, gems_in_chord.keys() ):
+                for x, v in [x_y1 for x_y1 in list(gems_in_chord.keys()) if x_y1[0] == b]:
                     gems_text = gems_text + num_to_text[ v ] + " + "
                 debug( "ERROR: Found {} chord at {} - ( {} )".format( gems_text[:-3], format_location( b ), b ), True )
                 
                 localTmpl[ output_part_var + "_chords_easy"] += '<div class="row-fluid"><span class="span12"><strong class="">{}</strong> <span>{} chord not allowed</span> </span></div>'.format( format_location( b ), gems_text[:-3] )     
                 has_error = True
-        counter_chord_easy = filter(lambda (x,y): y >= 2, counter_global.iteritems())
+        counter_chord_easy = [x_y3 for x_y3 in iter(counter_global.items()) if x_y3[1] >= 2]
 
         debug( "=================== ENDS EASY " + part_name + ": No Chords ===================", True )
         
@@ -969,27 +989,27 @@ def handle_guitar(content, part_name ):
         debug( "", True )
         debug( "=================== GENERAL " + part_name + ": No gems under solo marker ===================", True )
         #Start notes
-        for notes_item in filter(lambda x: x.value == 103 , l_gems):
+        for notes_item in [x for x in l_gems if x.value == 103]:
             solo_start.append( notes_item.pos )
             debug_extra( "Found start {} at {} - ( {}, {} )".format( num_to_text[ notes_item.value ], format_location( notes_item.pos ),notes_item.value, notes_item.pos ), True ) 
         #End notes
-        for notes_item in filter(lambda x: x.value == 103 , r_gems):
+        for notes_item in [x for x in r_gems if x.value == 103]:
             solo_end.append( notes_item.pos )            
             debug_extra( "Found end {} at {} - ( {}, {} )".format( num_to_text[ notes_item.value ], format_location( notes_item.pos ),notes_item.value, notes_item.pos ), True )        
         #Check for any gem under solo marker... we need at least one gem for the solo to be valid
         #for midi_check in [60,61,62,63,64,72,73,74,75,76,84,85,86,87,88,96,97,98,99,100]:            
         for index, item in enumerate(solo_start):
             gems_text = '';
-            if ( filter(lambda x: x.value >=60 and x.value <=64 and x.pos >= item and x.pos <= solo_end[index], l_gems) ):
+            if ( [x for x in l_gems if x.value >=60 and x.value <=64 and x.pos >= item and x.pos <= solo_end[index]] ):
                 counter[ item ] += 1
                 gems_text += 'Easy + '
-            if ( filter(lambda x: x.value >=72 and x.value <=76 and x.pos >= item and x.pos <= solo_end[index], l_gems) ):
+            if ( [x for x in l_gems if x.value >=72 and x.value <=76 and x.pos >= item and x.pos <= solo_end[index]] ):
                 counter[ item ] += 1
                 gems_text += 'Medium + '
-            if ( filter(lambda x: x.value >=84 and x.value <=88 and x.pos >= item and x.pos <= solo_end[index], l_gems) ):
+            if ( [x for x in l_gems if x.value >=84 and x.value <=88 and x.pos >= item and x.pos <= solo_end[index]] ):
                 counter[ item ] += 1
                 gems_text += 'Hard + '
-            if ( filter(lambda x: x.value >=96 and x.value <=100 and x.pos >= item and x.pos <= solo_end[index], l_gems) ):
+            if ( [x for x in l_gems if x.value >=96 and x.value <=100 and x.pos >= item and x.pos <= solo_end[index]] ):
                 counter[ item ] += 1
                 gems_text += 'Expert + '
             
@@ -1100,9 +1120,9 @@ def handle_guitar(content, part_name ):
         phrases_p1 = 0
         phrases_p2 = 0
 
-        for notes_item in filter(lambda x: x.value == 105 , l_gems):
+        for notes_item in [x for x in l_gems if x.value == 105]:
             phrases_p1 += 1
-        for notes_item in filter(lambda x: x.value == 106 , l_gems):
+        for notes_item in [x for x in l_gems if x.value == 106]:
             phrases_p2 += 1
 
         if phrases_p1 > 0 or phrases_p2 > 0:
@@ -1111,7 +1131,7 @@ def handle_guitar(content, part_name ):
                 has_error = True
 
         #Get all positions for ods
-        for notes_item in filter(lambda x: x.value == 116 , l_gems):            
+        for notes_item in [x for x in l_gems if x.value == 116]:            
             if( part_name == "PART GUITAR" ):                
                 guitar_pos_od.append( int ( notes_item.pos / 1920 ) + 1 )
             elif( part_name == "PART RHYTHM" ):
@@ -1120,7 +1140,7 @@ def handle_guitar(content, part_name ):
                 bass_pos_od.append( int ( notes_item.pos / 1920 ) + 1 )
 
         #Some totals
-        total_ods = len( filter(lambda x: x.value == 116, l_gems) )
+        total_ods = len( [x for x in l_gems if x.value == 116] )
         debug( "", True )
         debug( "=================== TOTAL " + part_name + ": Some numbers and stats ===================", True )
         debug( "Three notes including G+O gems: {}".format( len( counter_positions ) ), True )
@@ -1235,7 +1255,7 @@ def handle_vocals(content, part_name ):
         for elem in all_f_notes:        
             if( re.match(note_regex, elem) ):
                 all_notes.append( elem )
-        all_l_notes = re.findall("^\/(.*)$", content, re.I | re.MULTILINE)
+        all_l_notes = re.findall(r"^\/(.*)$", content, re.I | re.MULTILINE)
         noteloc = 0;
         decval="";
         c = []
@@ -1269,8 +1289,8 @@ def handle_vocals(content, part_name ):
         for index, item in enumerate(all_l_notes):
             if ( len(p_gems) < 3 ):
                 break
-            debug_extra("Index {}: Encoded: {} || Decoded: {} at {} ( {} )".format(index, item, base64.b64decode( '/' + item )[2:],format_location( p_gems[index].pos ), p_gems[index].pos ), True)
-            lyric_positions[ p_gems[index].pos ] = base64.b64decode( '/' + item )[2:]
+            debug_extra("Index {}: Encoded: {} || Decoded: {} at {} ( {} )".format(index, item, decode_base64_to_str( '/' + item )[2:],format_location( p_gems[index].pos ), p_gems[index].pos ), True)
+            lyric_positions[ p_gems[index].pos ] = decode_base64_to_str( '/' + item )
 
         #Get all Phrase Markers
         debug( "", True )
@@ -1362,7 +1382,7 @@ def handle_vocals(content, part_name ):
             full_phrase = ''
             output_full_phrase = ''
             debug_extra( "Phrase Marker #{} starts at {} ends at {} - [ {},{} ]".format( index+1, format_location( item ), format_location( phrase_end[index] ), item, phrase_end[index] ) ,True )
-            for od_midi_note in filter(lambda x: x.pos >= item and x.pos <= phrase_end[index] , p_gems):            
+            for od_midi_note in [x for x in p_gems if x.pos >= item and x.pos <= phrase_end[index]]:            
                 
                 if lyric_positions[ od_midi_note.pos ] not in reserved_words:
                     if( last_note == od_midi_note.pos ):
@@ -1373,7 +1393,9 @@ def handle_vocals(content, part_name ):
                     if lyric_positions[ od_midi_note.pos ] != '+' and lyric_positions[ od_midi_note.pos ] != "+$":
 
                         is_spoken = False
-                        syllable = str(lyric_positions[ od_midi_note.pos ]) + ' '
+                        syllable = str(lyric_positions[ od_midi_note.pos ]) + " "
+                        #console_msg(syllable)
+                        #console_msg("\n")
                         debug_extra(syllable, True)
 
                         # Remove or replace any game specific characters from the syllable before we work with it.
@@ -1469,11 +1491,11 @@ def handle_vocals(content, part_name ):
         od_start = []
         od_end = []
         #Start notes
-        for notes_item in filter(lambda x: x.value == 116 , l_gems):
+        for notes_item in [x for x in l_gems if x.value == 116]:
             od_start.append( notes_item.pos )
             debug_extra( "Found {} at {} - ( {}, {} )".format( num_to_text[ notes_item.value ], format_location( notes_item.pos ),notes_item.value, notes_item.pos ), True ) 
         #End notes
-        for notes_item in filter(lambda x: x.value == 116 , r_gems):
+        for notes_item in [x for x in r_gems if x.value == 116]:
             od_end.append( notes_item.pos )            
             debug_extra( "Found {} at {} - ( {}, {} )".format( num_to_text[ notes_item.value ], format_location( notes_item.pos ),notes_item.value, notes_item.pos ), True ) 
         #For od marker we do ....
@@ -1487,7 +1509,7 @@ def handle_vocals(content, part_name ):
         debug( "=================== " + part_name + ": Notes without space ===================", True )
         #Start notes
         for notes_item in l_gems:
-            for notes_item_2 in filter(lambda x: x.pos == notes_item.pos , r_gems):
+            for notes_item_2 in [x for x in r_gems if x.pos == notes_item.pos]:
                 if notes_item_2.value != 105 and notes_item_2.value != 106 and notes_item_2.value != 116:
                         debug("ERROR: Note {} starting at {} needs at least 2 64ths note gap between notes".format( num_to_text[ notes_item_2.value ], format_location( notes_item_2.pos ) ), True)
                         
@@ -1613,7 +1635,7 @@ def handle_keys(content, part_name ):
             counter_internal = 0    
             counter_global = Counter()
             gems_in_chord = Counter()
-            for notes_item in filter(lambda x: x.value >= item_note[0] and x.value <= item_note[1], l_gems):
+            for notes_item in [x for x in l_gems if x.value >= item_note[0] and x.value <= item_note[1]]:
                 debug_extra( "Found {} at {} - ( {}, {}): ".format( num_to_text[ notes_item.value ], format_location( notes_item.pos ), notes_item.value , notes_item.pos ), True ) 
                 counter_global[(notes_item.pos)] += 1
                 gems_in_chord[ ( notes_item.pos, notes_item.value ) ] += 1
@@ -1622,13 +1644,13 @@ def handle_keys(content, part_name ):
             for (a, b) in enumerate(counter_global):            
                 if( counter_global[b]>midi_notes_max[ idx_notes ] ):
                     gems_text = ''
-                    for x, v in filter(lambda (x,y): x == b, gems_in_chord.keys() ):
+                    for x, v in [x_y for x_y in list(gems_in_chord.keys()) if x_y[0] == b]:
                         gems_text = gems_text + num_to_text[ v ] + " + "
                     debug( "ERROR: Found {} chord at {} - ( {} )".format( gems_text[:-3], format_location( b ), b ), True )
                     
                     localTmpl[ midi_notes_output_var[ idx_notes ] ] += '<div class="row-fluid"><span class="span12"><strong class="">{}</strong> <span>{} chord not allowed</span> </span></div>'.format( format_location( b ), gems_text[:-3] )
                     has_error = True
-            counter_chord_easy = filter(lambda (x,y): y >= 2, counter_global.iteritems())
+            counter_chord_easy = [x_y2 for x_y2 in iter(counter_global.items()) if x_y2[1] >= 2]
             debug( "=================== ENDS " + midi_notes_text[ idx_notes ] + " KEYS: " + str( midi_notes_max[ idx_notes ] ) + " notes Chords ===================", True )
         
         #No gems under solo marker
@@ -1639,27 +1661,27 @@ def handle_keys(content, part_name ):
         debug( "", True )
         debug( "=================== GENERAL KEYS: No gems under solo marker ===================", True )
         #Start notes
-        for notes_item in filter(lambda x: x.value == 103 , l_gems):
+        for notes_item in [x for x in l_gems if x.value == 103]:
             solo_start.append( notes_item.pos )
             debug_extra( "Found start {} at {} - ( {}, {} )".format( num_to_text[ notes_item.value ], format_location( notes_item.pos ),notes_item.value, notes_item.pos ), True ) 
         #End notes
-        for notes_item in filter(lambda x: x.value == 103 , r_gems):
+        for notes_item in [x for x in r_gems if x.value == 103]:
             solo_end.append( notes_item.pos )            
             debug_extra( "Found end {} at {} - ( {}, {} )".format( num_to_text[ notes_item.value ], format_location( notes_item.pos ),notes_item.value, notes_item.pos ), True )        
         #Check for any gem under solo marker... we need at least one gem for the solo to be valid
         #for midi_check in [60,61,62,63,64,72,73,74,75,76,84,85,86,87,88,96,97,98,99,100]:            
         for index, item in enumerate(solo_start):
             gems_text = '';
-            if ( filter(lambda x: x.value >=60 and x.value <=64 and x.pos >= item and x.pos <= solo_end[index], l_gems) ):
+            if ( [x for x in l_gems if x.value >=60 and x.value <=64 and x.pos >= item and x.pos <= solo_end[index]] ):
                 counter[ item ] += 1
                 gems_text += 'Easy + '
-            if ( filter(lambda x: x.value >=72 and x.value <=76 and x.pos >= item and x.pos <= solo_end[index], l_gems) ):
+            if ( [x for x in l_gems if x.value >=72 and x.value <=76 and x.pos >= item and x.pos <= solo_end[index]] ):
                 counter[ item ] += 1
                 gems_text += 'Medium + '
-            if ( filter(lambda x: x.value >=84 and x.value <=88 and x.pos >= item and x.pos <= solo_end[index], l_gems) ):
+            if ( [x for x in l_gems if x.value >=84 and x.value <=88 and x.pos >= item and x.pos <= solo_end[index]] ):
                 counter[ item ] += 1
                 gems_text += 'Hard + '
-            if ( filter(lambda x: x.value >=96 and x.value <=100 and x.pos >= item and x.pos <= solo_end[index], l_gems) ):
+            if ( [x for x in l_gems if x.value >=96 and x.value <=100 and x.pos >= item and x.pos <= solo_end[index]] ):
                 counter[ item ] += 1
                 gems_text += 'Expert + '
             
@@ -1767,10 +1789,10 @@ def handle_keys(content, part_name ):
         '''
         #Get all positions for ods
         keys_pos_od = []
-        for notes_item in filter(lambda x: x.value == 116 , l_gems):
+        for notes_item in [x for x in l_gems if x.value == 116]:
             keys_pos_od.append( int ( notes_item.pos / 1920 ) + 1 )
         #Some totals
-        total_ods = len( filter(lambda x: x.value == 116, l_gems) )
+        total_ods = len( [x for x in l_gems if x.value == 116] )
         debug( "", True )
         debug( "=================== TOTAL KEYS: Some numbers and stats ===================", True )
         debug( "Total Solo Markers: {}".format( len( solo_start ) ), True )
@@ -1976,7 +1998,7 @@ def handle_pro_keys(content, part_name ):
         debug("", True)
 
         debug("Will validate with {} max notes".format(max_notes), True)        
-        for position, value in c.iteritems():
+        for position, value in c.items():
  
             debug( "{} notes found at {}".format( value, format_location( position ) ), True )
 
@@ -2045,7 +2067,7 @@ def handle_pro_keys(content, part_name ):
             keys_pos_od.append( int ( notes_item.pos / 1920 ) + 1 )
         '''
         #Some totals
-        total_ods = len( filter(lambda x: x.value == 116, l_gems) )
+        total_ods = len( [x for x in l_gems if x.value == 116] )
         debug( "", True )
         debug( "=================== TOTAL PRO KEYS: Some numbers and stats ===================", True )
         #debug( "Total Solo Markers: {}".format( len( solo_start ) ), True )
@@ -2116,7 +2138,7 @@ def handle_events(content, part_name ):
         for elem in all_text_events:        
             if( re.match(note_regex, elem) ):
                 all_notes.append( elem )
-        all_l_notes = re.findall("^\/(.*)$", content, re.I | re.MULTILINE)
+        all_l_notes = re.findall(r"^\/(.*)$", content, re.I | re.MULTILINE)
         noteloc = 0;        
         for elem in all_notes:
             decval = 0;
@@ -2146,7 +2168,7 @@ def handle_events(content, part_name ):
         sect_ends = []
         sect_ends_pos = []
         for index, item in enumerate(all_l_notes):
-            text_decode = base64.b64decode( '/' + item )[2:].strip()
+            text_decode = decode_base64_to_str( '/' + item )[2:].strip()
             debug_extra("Index {}: Encoded: {} || Decoded: {} at {} ( {} )".format(index, item, text_decode,format_location( p_gems[index].pos ), p_gems[index].pos ), True)
             #Remove NON PRACTICE section events
             if( text_decode not in non_practice_sections ):
@@ -2218,7 +2240,7 @@ def format_location( note_location ):
                 _time_1 = (_location_offset / _divisor) + project_time_signature_location_measure[_location_index]
                 _time_2 = (_location_offset % _divisor ) / ( _ppq / (_location_denom / 4) )
 
-                return ( str(_time_1 + 1)+ '.' + str(_time_2 + 1) )
+                return ( str(int(_time_1 + 1))+ '.' + str(int(_time_2 + 1)) )
 
         return "Error.Error"
    
@@ -2334,7 +2356,7 @@ while project_time_signature_next_time != -1:
 
 with open(OUTPUT_FILE, 'w') as f:
 
-    for media_item in xrange(0, num_media_items):
+    for media_item in range(0, num_media_items):
         item = RPR_GetMediaItem(0, media_item);
         #bool, item, chunk, maxlen = RPR_GetSetItemState(item, chunk, maxlen);
         results = RPR_GetSetItemState(item, track_content, maxlen)
@@ -2348,8 +2370,8 @@ with open(OUTPUT_FILE, 'w') as f:
         track_name = ""
 
         # Find the name of the item, and the track name event.
-        item_name_search = re.findall("^\s*NAME\s+(.*)", track_content, re.MULTILINE)
-        track_name_search = re.findall("<(x|X) 0 0+(.*)\n+(.*)", track_content)
+        item_name_search = re.findall(r"^\s*NAME\s+(.*)", track_content, re.MULTILINE)
+        track_name_search = re.findall(r"<(x|X) 0 0+(.*)\n+(.*)", track_content)
 
         # Set the item name if we found it.
         if len(item_name_search) == 1:
@@ -2358,7 +2380,9 @@ with open(OUTPUT_FILE, 'w') as f:
         # Grab and decode the track name.
         if len(track_name_search) > 0:
             track_name = str(track_name_search[0][2])
-            track_name = track_name.decode('base64')[2:]
+            track_name = base64.b64decode(track_name)
+            track_name = track_name[2:]
+            track_name = codecs.decode(track_name, 'utf-8')
 
         if "rhythm" in item_name.lower():
             track_name = "PART RHYTHM"
@@ -2983,9 +3007,6 @@ with open(OUTPUT_HTML_FILE, 'w') as f:
 </html>
 '''
     debug_html(str(var_html))
-
-# Revert the encoding back to ASCII because we are done.
-sys.setdefaultencoding('ascii')
 
 console_msg('Done! Opening web browser.')
 webbrowser.open( OUTPUT_HTML_FILE )

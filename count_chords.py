@@ -3,7 +3,7 @@ import C3toolbox
 import sys
 import os
 sys.argv=["Main"]
-import Tkinter
+import tkinter
 
 global level_var
 global form
@@ -24,33 +24,33 @@ def launch():
     global form
     
     C3toolbox.startup()
-    form = Tkinter.Tk()
+    form = tkinter.Tk()
     form.wm_title('Reduce double pedal kicks to single pedal kicks')
     
-    helpLf = Tkinter.Frame(form)
+    helpLf = tkinter.Frame(form)
     helpLf.grid(row=0, column=1, sticky='NS', padx=5, pady=5)
 
     OPTIONS = ["Expert", "Hard", "Medium", "Easy"]
 
-    level_var = Tkinter.StringVar(helpLf)
+    level_var = tkinter.StringVar(helpLf)
     level_var.set(OPTIONS[0]) # default value
 
-    levelOpt = apply(Tkinter.OptionMenu, (helpLf, level_var) + tuple(OPTIONS))
+    levelOpt = tkinter.OptionMenu(*(helpLf, level_var) + tuple(OPTIONS))
     levelOpt.grid(row=0, column=1, columnspan=1, sticky="WE", pady=3)
 
-    allBtn = Tkinter.Button(helpLf, text="Reduce all", command= lambda: execute(0)) 
+    allBtn = tkinter.Button(helpLf, text="Reduce all", command= lambda: execute(0)) 
     allBtn.grid(row=0, column=2, rowspan=1, sticky="WE", padx=5, pady=2)
 
-    selBtn = Tkinter.Button(helpLf, text="Reduce selected", command= lambda: execute(1)) 
+    selBtn = tkinter.Button(helpLf, text="Reduce selected", command= lambda: execute(1)) 
     selBtn.grid(row=0, column=3, rowspan=1, sticky="WE", padx=5, pady=2)
 
-    logo = Tkinter.Frame(form, bg="#000")
+    logo = tkinter.Frame(form, bg="#000")
     logo.grid(row=1, column=0, columnspan=10, sticky='WE', \
                  padx=0, pady=0, ipadx=0, ipady=0)
 
     path = os.path.join( sys.path[0], "banner.gif" )
-    img = Tkinter.PhotoImage(file=path)
-    imageLbl = Tkinter.Label(logo, image = img, borderwidth=0)
+    img = tkinter.PhotoImage(file=path)
+    imageLbl = tkinter.Label(logo, image = img, borderwidth=0)
     imageLbl.grid(row=0, column=0, rowspan=2, sticky='E', padx=0, pady=0)
 
     form.mainloop()

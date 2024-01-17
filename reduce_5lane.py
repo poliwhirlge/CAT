@@ -3,7 +3,7 @@ import C3toolbox
 import sys
 import os
 sys.argv=["Main"]
-import Tkinter
+import tkinter
 
 global tolerance
 global grid_var_h
@@ -144,7 +144,7 @@ def launch(instrument):
     global snaree_var
     
     C3toolbox.startup()
-    form = Tkinter.Tk()
+    form = tkinter.Tk()
     form.wm_title('Reduce 5 lane')
 
     C3toolbox.startup()
@@ -162,35 +162,35 @@ def launch(instrument):
         
     # LEVEL HARD
     
-    lvlHard = Tkinter.LabelFrame(form, text=" HARD reductions: ")
+    lvlHard = tkinter.LabelFrame(form, text=" HARD reductions: ")
     lvlHard.grid(row=0, columnspan=8, sticky='WE', \
                  padx=5, pady=5, ipadx=5, ipady=5)
 
-    lvlHardvar = Tkinter.IntVar(lvlHard)
-    lvlHardChk = Tkinter.Checkbutton(lvlHard, \
+    lvlHardvar = tkinter.IntVar(lvlHard)
+    lvlHardChk = tkinter.Checkbutton(lvlHard, \
                text="", onvalue=1, offvalue=0, variable=lvlHardvar)
     lvlHardChk.grid(row=0, column=1, sticky='W', padx=5, pady=2)
     lvlHardChk.select()
 
-    outTblLbl = Tkinter.Label(lvlHard, \
+    outTblLbl = tkinter.Label(lvlHard, \
           text="Grid:")
     outTblLbl.grid(row=0, column=2, sticky='W', padx=5, pady=2)
 
     OPTIONS = ["1", "1/2", "1/4", "1/8", "1/16"]
 
-    grid_var_h = Tkinter.StringVar(lvlHard)
+    grid_var_h = tkinter.StringVar(lvlHard)
     grid_var_h.set(OPTIONS[3]) # default value
 
-    gridOpt = apply(Tkinter.OptionMenu, (lvlHard, grid_var_h) + tuple(OPTIONS))
+    gridOpt = tkinter.OptionMenu(*(lvlHard, grid_var_h) + tuple(OPTIONS))
     gridOpt.grid(row=0, column=3, sticky="W", pady=3)
 
-    sameChkvar_h = Tkinter.IntVar(lvlHard)
-    sameChk_h = Tkinter.Checkbutton(lvlHard, \
+    sameChkvar_h = tkinter.IntVar(lvlHard)
+    sameChk_h = tkinter.Checkbutton(lvlHard, \
                text="Consecutive notes", onvalue=1, offvalue=0, variable=sameChkvar_h)
     sameChk_h.grid(row=0, column=4, sticky='W', padx=5, pady=2)
 
-    sparseChkvar_h = Tkinter.IntVar(lvlHard)
-    sparseChk_h = Tkinter.Checkbutton(lvlHard, \
+    sparseChkvar_h = tkinter.IntVar(lvlHard)
+    sparseChk_h = tkinter.Checkbutton(lvlHard, \
                text="Sparse notes", onvalue=1, offvalue=0, variable=sparseChkvar_h)
     sparseChk_h.grid(row=0, column=5, sticky='W', padx=5, pady=2)
     sparseChk_h.select()
@@ -199,68 +199,68 @@ def launch(instrument):
     if instrument_id == 0 or instrument_id == 5:
         bendText = "Remove kicks paired with percussion"
         
-    bendChkvar_h = Tkinter.IntVar(lvlHard)
-    bendChk_h = Tkinter.Checkbutton(lvlHard, \
+    bendChkvar_h = tkinter.IntVar(lvlHard)
+    bendChk_h = tkinter.Checkbutton(lvlHard, \
                text=bendText, onvalue=1, offvalue=0, variable=bendChkvar_h)
     bendChk_h.grid(row=0, column=6, sticky='W', padx=5, pady=2)
     if instrument_id != 0 and instrument_id != 5:
         bendChk_h.select()
 
-    chordsChkvar_h = Tkinter.IntVar(lvlHard)
+    chordsChkvar_h = tkinter.IntVar(lvlHard)
 
     if instrument_id != 0 and instrument_id != 5:
-        chordsChk_h = Tkinter.Checkbutton(lvlHard, \
+        chordsChk_h = tkinter.Checkbutton(lvlHard, \
                text="If reducing chords, enable use of GB and RO when translating from 3-note chords", onvalue=1, offvalue=0, variable=chordsChkvar_h)
         chordsChk_h.grid(row=1, column=2, columnspan=6, sticky='W', padx=5, pady=2)
         chordsChk_h.select()
     elif instrument_id == 0 or instrument_id == 5:
-        snarehLbl = Tkinter.Label(lvlHard, \
+        snarehLbl = tkinter.Label(lvlHard, \
                            text="Leave only a snare hit when coupled with:")
         snarehLbl.grid(row=1, column=1, columnspan=3, padx=5, pady=2, sticky='W')
 
     OPTIONS = ["Don't simplify snare", "Any note", "Kick", "Any tom", "Any cymbal"]
 
-    snareh_var = Tkinter.StringVar(lvlHard)
+    snareh_var = tkinter.StringVar(lvlHard)
     snareh_var.set(OPTIONS[0]) # default value
 
     if instrument_id == 0 or instrument_id == 5:
-        snarehOpt = apply(Tkinter.OptionMenu, (lvlHard, snareh_var) + tuple(OPTIONS))
+        snarehOpt = tkinter.OptionMenu(*(lvlHard, snareh_var) + tuple(OPTIONS))
         snarehOpt.grid(row=1, column=4, sticky="WE", pady=3) 
     
     # LEVEL MEDIUM
     
-    lvlMedium = Tkinter.LabelFrame(form, text=" MEDIUM reductions: ")
+    lvlMedium = tkinter.LabelFrame(form, text=" MEDIUM reductions: ")
     lvlMedium.grid(row=1, columnspan=8, sticky='WE', \
                  padx=5, pady=5, ipadx=5, ipady=5)
 
-    lvlMediumvar = Tkinter.IntVar(lvlMedium)
-    lvlMediumChk = Tkinter.Checkbutton(lvlMedium, \
+    lvlMediumvar = tkinter.IntVar(lvlMedium)
+    lvlMediumChk = tkinter.Checkbutton(lvlMedium, \
                text="", onvalue=1, offvalue=0, variable=lvlMediumvar)
     lvlMediumChk.grid(row=1, column=1, sticky='W', padx=5, pady=2)
     lvlMediumChk.select()
 
-    outTblLbl = Tkinter.Label(lvlMedium, \
+    outTblLbl = tkinter.Label(lvlMedium, \
           text="Grid:")
     outTblLbl.grid(row=1, column=2, sticky='W', padx=5, pady=2)
 
     OPTIONS = ["1", "1/2", "1/4", "1/8", "1/16"]
 
-    grid_var_m = Tkinter.StringVar(lvlMedium)
+    grid_var_m = tkinter.StringVar(lvlMedium)
     
     grid_var_m.set(OPTIONS[2]) # default value
 
-    gridOpt = apply(Tkinter.OptionMenu, (lvlMedium, grid_var_m) + tuple(OPTIONS))
+    gridOpt = tkinter.OptionMenu(*(lvlMedium, grid_var_m) + tuple(OPTIONS))
     gridOpt.grid(row=1, column=3, sticky="W", pady=3)
 
-    sameChkvar_m = Tkinter.IntVar(lvlMedium)
-    sameChk_m = Tkinter.Checkbutton(lvlMedium, \
+    sameChkvar_m = tkinter.IntVar(lvlMedium)
+    sameChk_m = tkinter.Checkbutton(lvlMedium, \
                text="Consecutive notes", onvalue=1, offvalue=0, variable=sameChkvar_m)
     sameChk_m.grid(row=1, column=4, sticky='W', padx=5, pady=2)
     if instrument_id != 0 and instrument_id != 5:
         sameChk_m.select()
 
-    sparseChkvar_m = Tkinter.IntVar(lvlMedium)
-    sparseChk_m = Tkinter.Checkbutton(lvlMedium, \
+    sparseChkvar_m = tkinter.IntVar(lvlMedium)
+    sparseChk_m = tkinter.Checkbutton(lvlMedium, \
                text="Sparse notes", onvalue=1, offvalue=0, variable=sparseChkvar_m)
     sparseChk_m.grid(row=1, column=5, sticky='W', padx=5, pady=2)
     sparseChk_m.select()
@@ -269,67 +269,67 @@ def launch(instrument):
     if instrument_id == 0 or instrument_id == 5:
         bendText = "Remove kicks paired with percussion"
         
-    bendChkvar_m = Tkinter.IntVar(lvlMedium)
-    bendChk_m = Tkinter.Checkbutton(lvlMedium, \
+    bendChkvar_m = tkinter.IntVar(lvlMedium)
+    bendChk_m = tkinter.Checkbutton(lvlMedium, \
                text=bendText, onvalue=1, offvalue=0, variable=bendChkvar_m)
     bendChk_m.grid(row=1, column=6, sticky='W', padx=5, pady=2)
     if instrument_id == 0 or instrument_id == 5:
         bendChk_m.select()
     
-    chordsChkvar_m = Tkinter.IntVar(lvlMedium)
+    chordsChkvar_m = tkinter.IntVar(lvlMedium)
     if instrument_id != 0 and instrument_id != 5:
-        chordsChk_m = Tkinter.Checkbutton(lvlMedium, \
+        chordsChk_m = tkinter.Checkbutton(lvlMedium, \
                text="If reducing chords, enable use of BO chords", onvalue=1, offvalue=0, variable=chordsChkvar_m)
         chordsChk_m.grid(row=2, column=2, columnspan=6, sticky='W', padx=5, pady=2)
         chordsChk_m.select()
     elif instrument_id == 0 or instrument_id == 5:
-        snaremLbl = Tkinter.Label(lvlMedium, \
+        snaremLbl = tkinter.Label(lvlMedium, \
                            text="Leave only a snare hit when coupled with:")
         snaremLbl.grid(row=3, column=1, columnspan=3, padx=5, pady=2, sticky='W')
 
     OPTIONS = ["Don't simplify snare", "Any note", "Kick", "Any tom", "Any cymbal"]
 
-    snarem_var = Tkinter.StringVar(lvlMedium)
+    snarem_var = tkinter.StringVar(lvlMedium)
     snarem_var.set(OPTIONS[0]) # default value
 
     if instrument_id == 0 or instrument_id == 5:
-        snaremOpt = apply(Tkinter.OptionMenu, (lvlMedium, snarem_var) + tuple(OPTIONS))
+        snaremOpt = tkinter.OptionMenu(*(lvlMedium, snarem_var) + tuple(OPTIONS))
         snaremOpt.grid(row=3, column=4, sticky="WE", pady=3)
         
     # LEVEL EASY
     
-    lvlEasy = Tkinter.LabelFrame(form, text=" EASY reductions: ")
+    lvlEasy = tkinter.LabelFrame(form, text=" EASY reductions: ")
     lvlEasy.grid(row=2, columnspan=8, sticky='WE', \
                  padx=5, pady=5, ipadx=5, ipady=5)
 
-    lvlEasyvar = Tkinter.IntVar(lvlEasy)
-    lvlEasyChk = Tkinter.Checkbutton(lvlEasy, \
+    lvlEasyvar = tkinter.IntVar(lvlEasy)
+    lvlEasyChk = tkinter.Checkbutton(lvlEasy, \
                text="", onvalue=1, offvalue=0, variable=lvlEasyvar)
     lvlEasyChk.grid(row=2, column=1, sticky='W', padx=5, pady=2)
     lvlEasyChk.select()
 
-    outTblLbl = Tkinter.Label(lvlEasy, \
+    outTblLbl = tkinter.Label(lvlEasy, \
           text="Grid:")
     outTblLbl.grid(row=2, column=2, sticky='W', padx=5, pady=2)
 
     OPTIONS = ["1", "1/2", "1/4", "1/8", "1/16"]
 
-    grid_var_e = Tkinter.StringVar(lvlEasy)
+    grid_var_e = tkinter.StringVar(lvlEasy)
     grid_var_e.set(OPTIONS[1]) # default value
     if instrument_id == 0:
         grid_var_e.set(OPTIONS[2])
-    gridOpt = apply(Tkinter.OptionMenu, (lvlEasy, grid_var_e) + tuple(OPTIONS))
+    gridOpt = tkinter.OptionMenu(*(lvlEasy, grid_var_e) + tuple(OPTIONS))
     gridOpt.grid(row=2, column=3, sticky="W", pady=3)
 
-    sameChkvar_e = Tkinter.IntVar(lvlEasy)
-    sameChk_e = Tkinter.Checkbutton(lvlEasy, \
+    sameChkvar_e = tkinter.IntVar(lvlEasy)
+    sameChk_e = tkinter.Checkbutton(lvlEasy, \
                text="Consecutive notes", onvalue=1, offvalue=0, variable=sameChkvar_e)
     sameChk_e.grid(row=2, column=4, sticky='W', padx=5, pady=2)
     if instrument_id != 0 and instrument_id != 5:
         sameChk_e.select()
 
-    sparseChkvar_e = Tkinter.IntVar(lvlEasy)
-    sparseChk_e = Tkinter.Checkbutton(lvlEasy, \
+    sparseChkvar_e = tkinter.IntVar(lvlEasy)
+    sparseChk_e = tkinter.Checkbutton(lvlEasy, \
                text="Sparse notes", onvalue=1, offvalue=0, variable=sparseChkvar_e)
     sparseChk_e.grid(row=2, column=5, sticky='W', padx=5, pady=2)
     sparseChk_e.select()
@@ -338,44 +338,44 @@ def launch(instrument):
     if instrument_id == 0 or instrument_id == 5:
         bendText = "Remove kicks paired with anything"
         
-    bendChkvar_e = Tkinter.IntVar(lvlEasy)
-    bendChk = Tkinter.Checkbutton(lvlEasy, \
+    bendChkvar_e = tkinter.IntVar(lvlEasy)
+    bendChk = tkinter.Checkbutton(lvlEasy, \
                text=bendText, onvalue=1, offvalue=0, variable=bendChkvar_e)
     bendChk.grid(row=2, column=6, sticky='W', padx=5, pady=2)
     if instrument_id == 0 or instrument_id == 5:
         bendChk.select()
 
-    chordsChkvar_e = Tkinter.IntVar(lvlEasy)
+    chordsChkvar_e = tkinter.IntVar(lvlEasy)
     if instrument_id != 0 and instrument_id != 5:
-        chordsChk_e = Tkinter.Checkbutton(lvlEasy, \
+        chordsChk_e = tkinter.Checkbutton(lvlEasy, \
                    text="If reducing chords, keep the occasional B and O notes", onvalue=1, offvalue=0, variable=chordsChkvar_e)
         chordsChk_e.grid(row=4, column=2, columnspan=6, sticky='W', padx=5, pady=2)
         chordsChk_e.select()
     elif instrument_id == 0 or instrument_id == 5:
-        snareeLbl = Tkinter.Label(lvlEasy, \
+        snareeLbl = tkinter.Label(lvlEasy, \
                            text="Leave only a snare hit when coupled with:")
         snareeLbl.grid(row=5, column=1, columnspan=3, padx=5, pady=2, sticky='W')
 
     OPTIONS = ["Don't simplify snare", "Any note", "Kick", "Any tom", "Any cymbal"]
 
-    snaree_var = Tkinter.StringVar(lvlEasy)
+    snaree_var = tkinter.StringVar(lvlEasy)
     snaree_var.set(OPTIONS[0]) # default value
 
     if instrument_id == 0 or instrument_id == 5:
-        snareeOpt = apply(Tkinter.OptionMenu, (lvlEasy, snaree_var) + tuple(OPTIONS))
+        snareeOpt = tkinter.OptionMenu(*(lvlEasy, snaree_var) + tuple(OPTIONS))
         snareeOpt.grid(row=5, column=4, sticky="WE", pady=3)
         
     # OPTIONS
 
-    Options_grid = Tkinter.LabelFrame(form, text=" Options: ")
+    Options_grid = tkinter.LabelFrame(form, text=" Options: ")
     Options_grid.grid(row=3, columnspan=8, sticky='WE', \
                  padx=5, pady=5, ipadx=5, ipady=5)
 
-    toleranceLbl = Tkinter.Label(Options_grid, \
+    toleranceLbl = tkinter.Label(Options_grid, \
                            text="Tolerance:")
     toleranceLbl.grid(row=0, column=1, padx=5, pady=2, sticky='W')
 
-    tolerance = Tkinter.Entry(Options_grid)
+    tolerance = tkinter.Entry(Options_grid)
     tolerance.insert(0, "20")
     tolerance.config(width=5)
     tolerance.grid(row=0, column=2, padx=5, pady=2, sticky='W')
@@ -383,59 +383,59 @@ def launch(instrument):
     OPTIONS = ["Drums", "Guitar", "Bass", "Keys", "Pro Keys", "2x Drums", "Rhythm"]
     
 
-    instrument_var = Tkinter.StringVar(Options_grid)
+    instrument_var = tkinter.StringVar(Options_grid)
     instrument_var.set(OPTIONS[instrument_id]) # default value
 
-    instrumentOpt = apply(Tkinter.OptionMenu, (Options_grid, instrument_var) + tuple(OPTIONS))
+    instrumentOpt = tkinter.OptionMenu(*(Options_grid, instrument_var) + tuple(OPTIONS))
     instrumentOpt.grid(row=0, column=3, columnspan=1, sticky="W", pady=3)
 
-    mutevar = Tkinter.IntVar(Options_grid)
-    muteChk = Tkinter.Checkbutton(Options_grid, \
+    mutevar = tkinter.IntVar(Options_grid)
+    muteChk = tkinter.Checkbutton(Options_grid, \
                text="Overwrite notes", onvalue=1, offvalue=0, variable=mutevar)
     muteChk.grid(row=0, column=4, sticky='W', padx=5, pady=2)
     
     if instrument_id == 0 or instrument_id == 5:
     
-        unflipLbl = Tkinter.Label(Options_grid, \
+        unflipLbl = tkinter.Label(Options_grid, \
                            text="Unflip disco starting from:")
         unflipLbl.grid(row=0, column=5, padx=5, pady=2, sticky='W')
 
     OPTIONS = ["Hard", "Medium", "Easy"]
 
-    level_var = Tkinter.StringVar(Options_grid)
+    level_var = tkinter.StringVar(Options_grid)
     level_var.set(OPTIONS[0]) # default value
 
     if instrument_id == 0 or instrument_id == 5:
-        levelOpt = apply(Tkinter.OptionMenu, (Options_grid, level_var) + tuple(OPTIONS))
+        levelOpt = tkinter.OptionMenu(*(Options_grid, level_var) + tuple(OPTIONS))
         levelOpt.grid(row=0, column=6, sticky="WE", pady=3) 
 
-    okFileBtn = Tkinter.Button(Options_grid, text="      Reduce      ", command= lambda: execute(0))
+    okFileBtn = tkinter.Button(Options_grid, text="      Reduce      ", command= lambda: execute(0))
     okFileBtn.grid(row=0, column=7, columnspan=4, sticky="WE", padx=5, pady=2)
 
-    reduceChordsvar = Tkinter.IntVar(Options_grid)
+    reduceChordsvar = tkinter.IntVar(Options_grid)
     
     if instrument_id != 0 and instrument_id != 5:
-        reduceChords = Tkinter.Checkbutton(Options_grid, \
+        reduceChords = tkinter.Checkbutton(Options_grid, \
                text="Reduce chords (for all levels processed)", onvalue=1, offvalue=0, variable=reduceChordsvar)
         reduceChords.grid(row=1, column=1, columnspan=3, sticky='W', padx=5, pady=2)
         reduceChords.select()
         
-    reduceNotesvar = Tkinter.IntVar(Options_grid)
+    reduceNotesvar = tkinter.IntVar(Options_grid)
     
     if instrument_id != 0 and instrument_id != 5:
         
-        reduceNotes = Tkinter.Checkbutton(Options_grid, \
+        reduceNotes = tkinter.Checkbutton(Options_grid, \
                text="Simplify Medium and Easy notes (for all levels processed)", onvalue=1, offvalue=0, variable=reduceNotesvar)
         reduceNotes.grid(row=1, column=4, columnspan=5, sticky='W', padx=5, pady=2)
         reduceNotes.select()
 
-    logo = Tkinter.Frame(form, bg="#000")
+    logo = tkinter.Frame(form, bg="#000")
     logo.grid(row=4, column=0, columnspan=10, sticky='WE', \
                  padx=0, pady=0, ipadx=0, ipady=0)
 
     path = os.path.join( sys.path[0], "banner.gif" )
-    img = Tkinter.PhotoImage(file=path)
-    imageLbl = Tkinter.Label(logo, image = img, borderwidth=0)
+    img = tkinter.PhotoImage(file=path)
+    imageLbl = tkinter.Label(logo, image = img, borderwidth=0)
     imageLbl.grid(row=0, column=0, rowspan=2, sticky='E', padx=0, pady=0)
 
     form.mainloop()

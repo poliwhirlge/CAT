@@ -5,7 +5,7 @@ import os
 sys.argv=["Main"]
 
 
-import Tkinter
+import tkinter
 global instrument_var
 global fldRowTxt
 global level_var
@@ -57,30 +57,30 @@ def launch():
     global eChkvar
     global form
     
-    form = Tkinter.Tk()
-    getFld = Tkinter.IntVar()
+    form = tkinter.Tk()
+    getFld = tkinter.IntVar()
     form.wm_title('Reduce notes')
     C3toolbox.startup()
 
     # STEP 1    
 
-    stepThree = Tkinter.LabelFrame(form, text=" Select levels to reduce: ")
+    stepThree = tkinter.LabelFrame(form, text=" Select levels to reduce: ")
     stepThree.grid(row=0, columnspan=5, sticky='WE', \
                    padx=5, pady=5, ipadx=5, ipady=5)
-    hChkvar = Tkinter.IntVar(stepThree)
-    hChk = Tkinter.Checkbutton(stepThree, \
+    hChkvar = tkinter.IntVar(stepThree)
+    hChk = tkinter.Checkbutton(stepThree, \
                text="Hard", onvalue=1, offvalue=0, variable=hChkvar)
     hChk.grid(row=1, column=1, sticky='W', padx=5, pady=2)
     hChk.select()
     
-    mChkvar = Tkinter.IntVar(stepThree)
-    mChk = Tkinter.Checkbutton(stepThree, \
+    mChkvar = tkinter.IntVar(stepThree)
+    mChk = tkinter.Checkbutton(stepThree, \
                text="Medium", onvalue=1, offvalue=0, variable=mChkvar)
     mChk.grid(row=1, column=2, sticky='W', padx=5, pady=2)    
     mChk.select()
     
-    eChkvar = Tkinter.IntVar(stepThree)
-    eChk = Tkinter.Checkbutton(stepThree, \
+    eChkvar = tkinter.IntVar(stepThree)
+    eChk = tkinter.Checkbutton(stepThree, \
                text="Easy", onvalue=1, offvalue=0, variable=eChkvar)
     eChk.grid(row=1, column=3, sticky='W', padx=5, pady=2)
     eChk.select()
@@ -88,22 +88,22 @@ def launch():
 
     # HELP
 
-    helpLf = Tkinter.LabelFrame(form, text=" Quick Help ")
+    helpLf = tkinter.LabelFrame(form, text=" Quick Help ")
     helpLf.grid(row=0, column=9, columnspan=1, rowspan=2, \
                 sticky='NS', padx=5, pady=5)
-    helpLbl = Tkinter.Label(helpLf, text="Check documentation\nfor configuration switches\n\n\n\n\n")
+    helpLbl = tkinter.Label(helpLf, text="Check documentation\nfor configuration switches\n\n\n\n\n")
     helpLbl.grid(row=0, columnspan=1, column=9, sticky='W')
 
-    okFileBtn = Tkinter.Button(helpLf, text="Reduce", command= lambda: execute(0))
+    okFileBtn = tkinter.Button(helpLf, text="Reduce", command= lambda: execute(0))
     okFileBtn.grid(row=1, column=9, sticky="WE", padx=5, pady=2)
 
-    logo = Tkinter.Frame(form, bg="#000")
+    logo = tkinter.Frame(form, bg="#000")
     logo.grid(row=3, column=0, columnspan=10, sticky='WE', \
                  padx=0, pady=0, ipadx=0, ipady=0)
 
     path = os.path.join( sys.path[0], "banner.gif" )
-    img = Tkinter.PhotoImage(file=path)
-    imageLbl = Tkinter.Label(logo, image = img, borderwidth=0)
+    img = tkinter.PhotoImage(file=path)
+    imageLbl = tkinter.Label(logo, image = img, borderwidth=0)
     imageLbl.grid(row=0, column=0, rowspan=2, sticky='E', padx=0, pady=0)
     
     form.mainloop()

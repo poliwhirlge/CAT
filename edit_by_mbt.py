@@ -5,7 +5,7 @@ import os
 sys.argv=["Main"]
 
 
-import Tkinter
+import tkinter
 global instrument_var
 global form
 global level_var
@@ -85,8 +85,8 @@ def launch():
     global bluvar
     global orangevar
     
-    form = Tkinter.Tk()
-    getFld = Tkinter.IntVar()
+    form = tkinter.Tk()
+    getFld = tkinter.IntVar()
     form.wm_title('Remove notes by MBT')
     C3toolbox.startup()
     instrument_name = C3toolbox.get_trackname()
@@ -104,10 +104,10 @@ def launch():
         return
     
     # STEP 1
-    helpLf = Tkinter.Frame(form)
+    helpLf = tkinter.Frame(form)
     helpLf.grid(row=0, column=1, sticky='NS', padx=5, pady=5)
 
-    inFileLbl = Tkinter.Label(helpLf, text="Select instrument")
+    inFileLbl = tkinter.Label(helpLf, text="Select instrument")
     inFileLbl.grid(row=0, column=1, sticky='WE', padx=5, pady=2)    
     
     OPTIONS = ["Drums", "Guitar", "Bass", "Keys", "2x Drums", "Rhythm"]
@@ -115,35 +115,35 @@ def launch():
     if instrument_id >= len(OPTIONS):
         instrument_id = 0
 
-    instrument_var = Tkinter.StringVar(helpLf)
+    instrument_var = tkinter.StringVar(helpLf)
     instrument_var.set(OPTIONS[instrument_id]) # default value
 
-    instrumentOpt = apply(Tkinter.OptionMenu, (helpLf, instrument_var) + tuple(OPTIONS))
+    instrumentOpt = tkinter.OptionMenu(*(helpLf, instrument_var) + tuple(OPTIONS))
     instrumentOpt.grid(row=1, column=1, sticky="WE", pady=3)
 
-    levelLbl = Tkinter.Label(helpLf, text="Select difficulty")
+    levelLbl = tkinter.Label(helpLf, text="Select difficulty")
     levelLbl.grid(row=0, column=2, columnspan=2, sticky='WE', padx=5, pady=2)
 
     OPTIONS = ["Expert", "Hard", "Medium", "Easy"]
 
-    level_var = Tkinter.StringVar(helpLf)
+    level_var = tkinter.StringVar(helpLf)
     level_var.set(OPTIONS[C3toolbox.array_levels_id[curlevel]]) # default value
 
-    levelOpt = apply(Tkinter.OptionMenu, (helpLf, level_var) + tuple(OPTIONS))
+    levelOpt = tkinter.OptionMenu(*(helpLf, level_var) + tuple(OPTIONS))
     levelOpt.grid(row=1, column=2, columnspan=2, sticky="WE", pady=3)
 
-    measureLbl = Tkinter.Label(helpLf, text="Measure")
+    measureLbl = tkinter.Label(helpLf, text="Measure")
     measureLbl.grid(row=2, column=1, sticky='WE', padx=5, pady=2)
 
     OPTIONS = ["Any"]
 
-    measure_var = Tkinter.StringVar(helpLf)
+    measure_var = tkinter.StringVar(helpLf)
     measure_var.set(OPTIONS[0]) # default value
 
-    measureOpt = apply(Tkinter.OptionMenu, (helpLf, measure_var) + tuple(OPTIONS))
+    measureOpt = tkinter.OptionMenu(*(helpLf, measure_var) + tuple(OPTIONS))
     measureOpt.grid(row=3, column=1, sticky="WE", pady=3)
 
-    beatLbl = Tkinter.Label(helpLf, text="Beat")
+    beatLbl = tkinter.Label(helpLf, text="Beat")
     beatLbl.grid(row=2, column=2, sticky='WE', padx=5, pady=2)
 
     max_beat = 0
@@ -156,64 +156,64 @@ def launch():
     for x in range(1, max_beat+1):
         OPTIONS.append(str(x))
         
-    beat_var = Tkinter.StringVar(helpLf)
+    beat_var = tkinter.StringVar(helpLf)
     beat_var.set(OPTIONS[0]) # default value
 
-    beatOpt = apply(Tkinter.OptionMenu, (helpLf, beat_var) + tuple(OPTIONS))
+    beatOpt = tkinter.OptionMenu(*(helpLf, beat_var) + tuple(OPTIONS))
     beatOpt.grid(row=3, column=2, sticky="WE", pady=3)
 
-    ticksLbl = Tkinter.Label(helpLf, text="Ticks")
+    ticksLbl = tkinter.Label(helpLf, text="Ticks")
     ticksLbl.grid(row=2, column=3, sticky='WE', padx=5, pady=2)
 
     OPTIONS = ["Any", "0", "12", "25", "50", "75", "8", "16", "33", "37", "58", "62", "66", "83", "87", "91"]
 
-    ticks_var = Tkinter.StringVar(helpLf)
+    ticks_var = tkinter.StringVar(helpLf)
     ticks_var.set(OPTIONS[0]) # default value
 
-    ticksOpt = apply(Tkinter.OptionMenu, (helpLf, ticks_var) + tuple(OPTIONS))
+    ticksOpt = tkinter.OptionMenu(*(helpLf, ticks_var) + tuple(OPTIONS))
     ticksOpt.grid(row=3, column=3, sticky="WE", pady=3)
 
-    notesLbl = Tkinter.Label(helpLf, text="Select the notes to be removed")
+    notesLbl = tkinter.Label(helpLf, text="Select the notes to be removed")
     notesLbl.grid(row=4, column=1, columnspan=3, sticky='WE', padx=5, pady=2)
 
-    greenvar = Tkinter.IntVar(helpLf)
-    greenChk = Tkinter.Checkbutton(helpLf, \
+    greenvar = tkinter.IntVar(helpLf)
+    greenChk = tkinter.Checkbutton(helpLf, \
                text="Green", onvalue=1, offvalue=0, variable=greenvar)
     greenChk.grid(row=5, column=1, sticky='W', padx=5, pady=2)
 
-    redvar = Tkinter.IntVar(helpLf)
-    redChk = Tkinter.Checkbutton(helpLf, \
+    redvar = tkinter.IntVar(helpLf)
+    redChk = tkinter.Checkbutton(helpLf, \
                text="Red", onvalue=1, offvalue=0, variable=redvar)
     redChk.grid(row=5, column=2, sticky='W', padx=5, pady=2)
 
-    yellowvar = Tkinter.IntVar(helpLf)
-    yellowChk = Tkinter.Checkbutton(helpLf, \
+    yellowvar = tkinter.IntVar(helpLf)
+    yellowChk = tkinter.Checkbutton(helpLf, \
                text="Yellow", onvalue=1, offvalue=0, variable=yellowvar)
     yellowChk.grid(row=5, column=3, sticky='W', padx=5, pady=2)
 
-    bluvar = Tkinter.IntVar(helpLf)
-    bluChk = Tkinter.Checkbutton(helpLf, \
+    bluvar = tkinter.IntVar(helpLf)
+    bluChk = tkinter.Checkbutton(helpLf, \
                text="Blu", onvalue=1, offvalue=0, variable=bluvar)
     bluChk.grid(row=6, column=1, sticky='W', padx=5, pady=2)
 
-    orangevar = Tkinter.IntVar(helpLf)
-    orangeChk = Tkinter.Checkbutton(helpLf, \
+    orangevar = tkinter.IntVar(helpLf)
+    orangeChk = tkinter.Checkbutton(helpLf, \
                text="Orange (Kick for drums", onvalue=1, offvalue=0, variable=orangevar)
     orangeChk.grid(row=6, column=2, columnspan=2, sticky='W', padx=5, pady=2)    
     
-    allBtn = Tkinter.Button(helpLf, text="Remove notes", command= lambda: execute(0)) 
+    allBtn = tkinter.Button(helpLf, text="Remove notes", command= lambda: execute(0)) 
     allBtn.grid(row=7, column=1, sticky="WE", padx=5, pady=2)
 
-    selBtn = Tkinter.Button(helpLf, text="Remove from selected measures", command= lambda: execute(1)) 
+    selBtn = tkinter.Button(helpLf, text="Remove from selected measures", command= lambda: execute(1)) 
     selBtn.grid(row=7, column=2, columnspan=2, sticky="WE", padx=5, pady=2)
     
-    logo = Tkinter.Frame(form, bg="#000")
+    logo = tkinter.Frame(form, bg="#000")
     logo.grid(row=8, column=0, columnspan=10, sticky='WE', \
                  padx=0, pady=0, ipadx=0, ipady=0)
 
     path = os.path.join( sys.path[0], "banner.gif" )
-    img = Tkinter.PhotoImage(file=path)
-    imageLbl = Tkinter.Label(logo, image = img, borderwidth=0)
+    img = tkinter.PhotoImage(file=path)
+    imageLbl = tkinter.Label(logo, image = img, borderwidth=0)
     imageLbl.grid(row=0, column=0, rowspan=2, sticky='E', padx=0, pady=0)
     
     form.mainloop()

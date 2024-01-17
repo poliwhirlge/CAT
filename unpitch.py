@@ -5,7 +5,7 @@ import os
 sys.argv=["Main"]
 
 
-import Tkinter
+import tkinter
 global instrument_var
 global expression_var
 global fldRowTxt
@@ -36,8 +36,8 @@ def launch():
     global expression_var
     global form
     
-    form = Tkinter.Tk()
-    getFld = Tkinter.IntVar()
+    form = tkinter.Tk()
+    getFld = tkinter.IntVar()
     form.wm_title('Unpitch lyrics')
     C3toolbox.startup()
     instrument_name = C3toolbox.get_trackname()
@@ -47,38 +47,38 @@ def launch():
         instrument_id = 0
 
     # STEP 1
-    helpLf = Tkinter.Frame(form)
+    helpLf = tkinter.Frame(form)
     helpLf.grid(row=0, column=1, sticky='NS', padx=5, pady=5)
     
     OPTIONS = ["Vocals", "Harmony 1", "Harmony 2", "Harmony 3"]
 
-    instrument_var = Tkinter.StringVar(helpLf)
+    instrument_var = tkinter.StringVar(helpLf)
     instrument_var.set(OPTIONS[instrument_id]) # default value
 
-    instrumentOpt = apply(Tkinter.OptionMenu, (helpLf, instrument_var) + tuple(OPTIONS))
+    instrumentOpt = tkinter.OptionMenu(*(helpLf, instrument_var) + tuple(OPTIONS))
     instrumentOpt.grid(row=0, column=1, columnspan=1, sticky="WE", pady=3)
 
     OPTIONS = ["Normal non-pitched (#)", "Loose non-pitched (^)"]
 
-    expression_var = Tkinter.StringVar(helpLf)
+    expression_var = tkinter.StringVar(helpLf)
     expression_var.set(OPTIONS[0]) # default value
 
-    expressionOpt = apply(Tkinter.OptionMenu, (helpLf, expression_var) + tuple(OPTIONS))
+    expressionOpt = tkinter.OptionMenu(*(helpLf, expression_var) + tuple(OPTIONS))
     expressionOpt.grid(row=0, column=2, columnspan=1, sticky="WE", pady=3)
 
-    allBtn = Tkinter.Button(helpLf, text="Fix all notes", command= lambda: execute(0)) 
+    allBtn = tkinter.Button(helpLf, text="Fix all notes", command= lambda: execute(0)) 
     allBtn.grid(row=0, column=3, rowspan=1, sticky="WE", padx=5, pady=2)
 
-    selBtn = Tkinter.Button(helpLf, text="Fix selected notes only", command= lambda: execute(1)) 
+    selBtn = tkinter.Button(helpLf, text="Fix selected notes only", command= lambda: execute(1)) 
     selBtn.grid(row=0, column=4, rowspan=1, sticky="WE", padx=5, pady=2)    
     
-    logo = Tkinter.Frame(form, bg="#000")
+    logo = tkinter.Frame(form, bg="#000")
     logo.grid(row=8, column=0, columnspan=10, sticky='WE', \
                  padx=0, pady=0, ipadx=0, ipady=0)
 
     path = os.path.join( sys.path[0], "banner.gif" )
-    img = Tkinter.PhotoImage(file=path)
-    imageLbl = Tkinter.Label(logo, image = img, borderwidth=0)
+    img = tkinter.PhotoImage(file=path)
+    imageLbl = tkinter.Label(logo, image = img, borderwidth=0)
     imageLbl.grid(row=0, column=0, rowspan=2, sticky='E', padx=0, pady=0)
     
     form.mainloop()

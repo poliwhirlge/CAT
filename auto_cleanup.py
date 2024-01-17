@@ -3,7 +3,7 @@ import C3toolbox
 import sys
 import os
 sys.argv=["Main"]
-import Tkinter
+import tkinter
 
 global form
 global level_var
@@ -143,49 +143,49 @@ def launch():
     global drums2xvar
     global rhythmvar
     
-    form = Tkinter.Tk()
+    form = tkinter.Tk()
     form.wm_title('Auto clean-up')
       
     # POLISH
     
-    general = Tkinter.LabelFrame(form, text=" Polish notes (excluding vocals): ")
+    general = tkinter.LabelFrame(form, text=" Polish notes (excluding vocals): ")
     general.grid(row=0, columnspan=3, sticky='WE', \
                  padx=5, pady=5, ipadx=5, ipady=5)
 
-    polishvar = Tkinter.IntVar(general)
-    polishvarChk = Tkinter.Checkbutton(general, \
+    polishvar = tkinter.IntVar(general)
+    polishvarChk = tkinter.Checkbutton(general, \
                text="", onvalue=1, offvalue=0, variable=polishvar)
     polishvarChk.grid(row=0, column=1, sticky='W', padx=5, pady=2)
     polishvarChk.select()
 
-    expressionLbl = Tkinter.Label(general, text="Select grid")
+    expressionLbl = tkinter.Label(general, text="Select grid")
     expressionLbl.grid(row=0, column=2, sticky='E', padx=5, pady=2)
 
     OPTIONS = ["1/16", "1/32", "1/64"]
 
-    expression_var = Tkinter.StringVar(general)
+    expression_var = tkinter.StringVar(general)
     expression_var.set(OPTIONS[1]) # default value
 
-    expressionOpt = apply(Tkinter.OptionMenu, (general, expression_var) + tuple(OPTIONS))
+    expressionOpt = tkinter.OptionMenu(*(general, expression_var) + tuple(OPTIONS))
     expressionOpt.grid(row=0, column=3, sticky="WE", pady=3)
 
-    fldLbl = Tkinter.Label(general, \
+    fldLbl = tkinter.Label(general, \
                            text="Precision:")
     fldLbl.grid(row=1, column=2, padx=5, pady=2, sticky='E')
-    var = Tkinter.StringVar()
+    var = tkinter.StringVar()
     
-    fldRowTxt = Tkinter.Entry(general, textvariable=var)
+    fldRowTxt = tkinter.Entry(general, textvariable=var)
     var.set('20')
     fldRowTxt.grid(row=1, column=3, padx=5, pady=2, sticky='W')
 
     # FIX NOTES
     
-    fixmarkers = Tkinter.LabelFrame(form, text=" Remove invalid markers: ")
+    fixmarkers = tkinter.LabelFrame(form, text=" Remove invalid markers: ")
     fixmarkers.grid(row=0, column=4, columnspan=1, sticky='NSWE', \
                  padx=5, pady=5, ipadx=5, ipady=5)
 
-    invalidmarkersvar = Tkinter.IntVar(fixmarkers)
-    invalidmarkersvarChk = Tkinter.Checkbutton(fixmarkers, \
+    invalidmarkersvar = tkinter.IntVar(fixmarkers)
+    invalidmarkersvarChk = tkinter.Checkbutton(fixmarkers, \
                text="Fix all invalid markers", onvalue=1, offvalue=0, variable=invalidmarkersvar)
     invalidmarkersvarChk.grid(row=0, column=1, sticky='NS', padx=5, pady=2)
     invalidmarkersvarChk.select()
@@ -193,132 +193,132 @@ def launch():
     # FIX SUSTAINS
 
 
-    fixsustains = Tkinter.LabelFrame(form, text=" Fix sustains: ")
+    fixsustains = tkinter.LabelFrame(form, text=" Fix sustains: ")
     fixsustains.grid(row=1, column=1, sticky='WE', \
                  padx=5, pady=5, ipadx=5, ipady=5)
 
-    sustainsvar = Tkinter.IntVar(fixsustains)
-    sustainsvarChk = Tkinter.Checkbutton(fixsustains, \
+    sustainsvar = tkinter.IntVar(fixsustains)
+    sustainsvarChk = tkinter.Checkbutton(fixsustains, \
                text="", onvalue=1, offvalue=0, variable=sustainsvar)
     sustainsvarChk.grid(row=0, column=1, sticky='W', padx=5, pady=2)
     sustainsvarChk.select()    
 
     OPTIONS = ["Fix only stubby sustains", "Fix stubby and too long sustains"]
 
-    sustains_var = Tkinter.StringVar(fixsustains)
+    sustains_var = tkinter.StringVar(fixsustains)
     sustains_var.set(OPTIONS[1]) # default value
 
-    sustainsOpt = apply(Tkinter.OptionMenu, (fixsustains, sustains_var) + tuple(OPTIONS))
+    sustainsOpt = tkinter.OptionMenu(*(fixsustains, sustains_var) + tuple(OPTIONS))
     sustainsOpt.grid(row=0, column=2, sticky="WE", pady=3)    
     
     # OD SOLO
     
-    odsolo = Tkinter.LabelFrame(form, text=" Copy OD and solo markers: ")
+    odsolo = tkinter.LabelFrame(form, text=" Copy OD and solo markers: ")
     odsolo.grid(row=1, column=4, sticky='WE', \
                  padx=5, pady=5, ipadx=5, ipady=5)
 
-    odsolovar = Tkinter.IntVar(odsolo)
-    odsolovarChk = Tkinter.Checkbutton(odsolo, \
+    odsolovar = tkinter.IntVar(odsolo)
+    odsolovarChk = tkinter.Checkbutton(odsolo, \
                text="Copy missing OD and solo\nmarkers to pro keys", onvalue=1, offvalue=0, variable=odsolovar)
     odsolovarChk.grid(row=0, column=1, sticky='NS', padx=5, pady=2)
     odsolovarChk.select()
 
     # DRUMS
 
-    drums = Tkinter.LabelFrame(form, text=" 5-lane fixes: ")
+    drums = tkinter.LabelFrame(form, text=" 5-lane fixes: ")
     drums.grid(row=2, column=1, columnspan=4, sticky='WE', \
                  padx=5, pady=5, ipadx=5, ipady=5)
 
-    rollsvar = Tkinter.IntVar(drums)
-    rollsvarChk = Tkinter.Checkbutton(drums, \
+    rollsvar = tkinter.IntVar(drums)
+    rollsvarChk = tkinter.Checkbutton(drums, \
                text="Simplify rolls/swells/trills/tremolos", onvalue=1, offvalue=0, variable=rollsvar)
     rollsvarChk.grid(row=0, column=1, sticky='NS', padx=5, pady=2)
     rollsvarChk.select()
     
-    pedalvar = Tkinter.IntVar(drums)
-    pedalvarChk = Tkinter.Checkbutton(drums, \
+    pedalvar = tkinter.IntVar(drums)
+    pedalvarChk = tkinter.Checkbutton(drums, \
                text="Reduce double drum kicks to single pedal", onvalue=1, offvalue=0, variable=pedalvar)
     pedalvarChk.grid(row=0, column=2, sticky='NS', padx=5, pady=2)
     pedalvarChk.select()
 
     #INSTRUMENTS
 
-    instruments = Tkinter.LabelFrame(form, text=" Instruments: ")
+    instruments = tkinter.LabelFrame(form, text=" Instruments: ")
     instruments.grid(row=3, column=1, columnspan=8, sticky='WE', \
                  padx=5, pady=5, ipadx=5, ipady=5)
 
     C3toolbox.startup()
-    guitarvar = Tkinter.IntVar(instruments)
+    guitarvar = tkinter.IntVar(instruments)
     if C3toolbox.tracks_array["PART GUITAR"] != 999:
         
-        guitarvarChk = Tkinter.Checkbutton(instruments, \
+        guitarvarChk = tkinter.Checkbutton(instruments, \
                    text="Guitar", onvalue=1, offvalue=0, variable=guitarvar)
         guitarvarChk.grid(row=0, column=1, sticky='NS', padx=5, pady=2)
         guitarvarChk.select()
-    bassvar = Tkinter.IntVar(instruments)
+    bassvar = tkinter.IntVar(instruments)
     if C3toolbox.tracks_array["PART BASS"] != 999:
         
-        bassvarChk = Tkinter.Checkbutton(instruments, \
+        bassvarChk = tkinter.Checkbutton(instruments, \
                    text="Bass", onvalue=1, offvalue=0, variable=bassvar)
         bassvarChk.grid(row=0, column=2, sticky='NS', padx=5, pady=2)
         bassvarChk.select()
-    drumsvar = Tkinter.IntVar(instruments)
+    drumsvar = tkinter.IntVar(instruments)
     if C3toolbox.tracks_array["PART DRUMS"] != 999:
         
-        drumsvarChk = Tkinter.Checkbutton(instruments, \
+        drumsvarChk = tkinter.Checkbutton(instruments, \
                    text="Drums", onvalue=1, offvalue=0, variable=drumsvar)
         drumsvarChk.grid(row=0, column=3, sticky='NS', padx=5, pady=2)
         drumsvarChk.select()
-    vocalsvar = Tkinter.IntVar(instruments)
+    vocalsvar = tkinter.IntVar(instruments)
     if C3toolbox.tracks_array["PART VOCALS"] != 999:
         
-        vocalsvarChk = Tkinter.Checkbutton(instruments, \
+        vocalsvarChk = tkinter.Checkbutton(instruments, \
                    text="Vocals", onvalue=1, offvalue=0, variable=vocalsvar)
         vocalsvarChk.grid(row=0, column=4, sticky='NS', padx=5, pady=2)
         vocalsvarChk.select()
-    keysvar = Tkinter.IntVar(instruments)    
+    keysvar = tkinter.IntVar(instruments)    
     if C3toolbox.tracks_array["PART KEYS"] != 999:
         
-        keysvarChk = Tkinter.Checkbutton(instruments, \
+        keysvarChk = tkinter.Checkbutton(instruments, \
                    text="Keys", onvalue=1, offvalue=0, variable=keysvar)
         keysvarChk.grid(row=0, column=5, sticky='NS', padx=5, pady=2)
         keysvarChk.select()
-    prokeysvar = Tkinter.IntVar(instruments)
+    prokeysvar = tkinter.IntVar(instruments)
     if C3toolbox.tracks_array["PART REAL_KEYS_X"] != 999:
         
-        prokeysvarChk = Tkinter.Checkbutton(instruments, \
+        prokeysvarChk = tkinter.Checkbutton(instruments, \
                    text="Pro Keys", onvalue=1, offvalue=0, variable=prokeysvar)
         prokeysvarChk.grid(row=0, column=6, sticky='NS', padx=5, pady=2)
         prokeysvarChk.select()
-    drums2xvar = Tkinter.IntVar(instruments)
+    drums2xvar = tkinter.IntVar(instruments)
     if C3toolbox.tracks_array["PART DRUMS 2X"] != 999:
         
-        drums2xvarChk = Tkinter.Checkbutton(instruments, \
+        drums2xvarChk = tkinter.Checkbutton(instruments, \
                    text="Drums 2X", onvalue=1, offvalue=0, variable=drums2xvar)
         drums2xvarChk.grid(row=0, column=7, sticky='NS', padx=5, pady=2)
         drums2xvarChk.select()
-    rhythmvar = Tkinter.IntVar(instruments)
+    rhythmvar = tkinter.IntVar(instruments)
     if C3toolbox.tracks_array["PART RHYTHM"] != 999:
         
-        rhythmvarChk = Tkinter.Checkbutton(instruments, \
+        rhythmvarChk = tkinter.Checkbutton(instruments, \
                    text="Rhythm", onvalue=1, offvalue=0, variable=rhythmvar)
         rhythmvarChk.grid(row=0, column=8, sticky='NS', padx=5, pady=2)
         rhythmvarChk.select()
         
-    proceed = Tkinter.LabelFrame(form, text=" Execute (all difficulty levels of selected instruments will be processed): ")
+    proceed = tkinter.LabelFrame(form, text=" Execute (all difficulty levels of selected instruments will be processed): ")
     proceed.grid(row=4, column=1, columnspan=8, sticky='WE', \
                  padx=5, pady=5, ipadx=5, ipady=5)
     
-    allBtn = Tkinter.Button(proceed, text="Clean up all issues", command= lambda: execute(0)) 
+    allBtn = tkinter.Button(proceed, text="Clean up all issues", command= lambda: execute(0)) 
     allBtn.grid(row=0, column=5, sticky="W", padx=5, pady=2)
         
-    logo = Tkinter.Frame(form, bg="#000")
+    logo = tkinter.Frame(form, bg="#000")
     logo.grid(row=5, column=0, columnspan=10, sticky='WE', \
                  padx=0, pady=0, ipadx=0, ipady=0)
 
     path = os.path.join( sys.path[0], "banner.gif" )
-    img = Tkinter.PhotoImage(file=path)
-    imageLbl = Tkinter.Label(logo, image = img, borderwidth=0)
+    img = tkinter.PhotoImage(file=path)
+    imageLbl = tkinter.Label(logo, image = img, borderwidth=0)
     imageLbl.grid(row=0, column=0, rowspan=2, sticky='E', padx=0, pady=0)
 
     form.mainloop()
