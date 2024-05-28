@@ -10,6 +10,8 @@ import os
 import re
 import sys
 import codecs
+import sys
+
 
 import reaper_python as rpy
 
@@ -19,6 +21,17 @@ def rpr_unpacks(v):
 
 rpy.rpr_unpacks = rpr_unpacks
 
+class ReaperConsole:
+    def write(self, output):
+        if output != "":
+            RPR_ShowConsoleMsg(output)
+
+    def flush(self):
+        pass
+
+reaper_console = ReaperConsole()
+
+sys.stderr = reaper_console
 
 global end_event
 global tracks_array
@@ -3755,7 +3768,10 @@ def remove_invalid_chars(instrument, selected):
     for x in range(0, len(array_validevents)):
         event = array_validevents[x]
         if event[5] == 'ff05':
-            event[3] = event[3].translate(None, invalid_chars)
+            for char in invalid_chars:
+                if char in event[3]:
+                    event[3] = event[3].replace(char, "")
+
     array_validevents.extend(array_events)
     
     write_midi(instrument, [array_notesevents[0], array_validevents], end_part, start_part)
@@ -4019,7 +4035,7 @@ def unpitch(instrument, character, selected):
                 event = array_events[j]
                 if event[1] == position and event[5] == 'ff05' and '#' not in event[3] and '^' not in event[3]:
                     if "$" in event[3]:
-                        event[3] = event[3].translate(None, "$")
+                        event[3] = event[3].replace("$", "")
                         event[3]+=character+"$"
                     else:
                         event[3]+=character
@@ -4056,8 +4072,8 @@ def pitch(instrument, selected):
             for j in range(0, len(array_events)):
                 event = array_events[j]
                 if event[1] == position and event[5] == 'ff05' and ('#' in event[3] or '^' in event[3]):
-                    event[3] = event[3].translate(None, "#")
-                    event[3] = event[3].translate(None, "^")
+                    event[3] = event[3].replace("#", "")
+                    event[3] = event[3].replace("^", "")
                     break
                 
     write_midi(instrument, [array_notesevents[0], array_notesevents[1]], end_part, start_part)
@@ -4198,11 +4214,15 @@ def create_phrase_markers(instrument, grid, mute):
         if phrase_char in event[3] and start == 0: #We need to start a phrase
             #When we have a start marker we proceed looping to find the next one
             start = event[1]
-            event[3] = event[3].translate(None, phrase_char)
+            for char in phrase_char:
+                if char in event[3]:
+                    event[3] = event[3].replace(char, "")
         elif phrase_char in event[3]:
             #Once we do we take that position, we set it as new_next and look for the last note before that marker
             new_start = event[1]
-            event[3] = event[3].translate(None, phrase_char)
+            for char in phrase_char:
+                if char in event[3]:
+                    event[3] = event[3].replace(char, "")
             for j in reversed(list(range(0, len(array_validnotes)))):
                 note = array_validnotes[j]
                 if note[1] < event[1]:
