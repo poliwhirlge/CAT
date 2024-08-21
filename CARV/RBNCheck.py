@@ -318,7 +318,7 @@ def handle_drums(content, part_name):
     r_gems = []
     has_error = False
     num_to_text = {
-        127: "Cymbal Sweell",
+        127: "Cymbal Swell",
         126: "Drum Roll",
         124: "Drum Fill Green",
         123: "Drum Fill Blue",
@@ -484,8 +484,11 @@ def handle_drums(content, part_name):
 
             if notes_pads[pad_note] > 2:
                 debug("Found Kick + Gem at {}".format(format_location(pad_note)), True)
-                localTmpl[drumtype + '_general_issues'] += ('<div class="row-fluid"><span class="span12"><strong>' + str(
-                    format_location(pad_note)) + '</strong> ' + number_name[notes_pads[pad_note]] + ' Pads hit simultaneously on ' + diff_name[diff_index] + '</span></div>')
+                localTmpl[drumtype + '_general_issues'] += (
+                        '<div class="row-fluid"><span class="span12"><strong>' + str(
+                    format_location(pad_note)) + '</strong> ' + number_name[
+                            notes_pads[pad_note]] + ' Pads hit simultaneously on ' + diff_name[
+                            diff_index] + '</span></div>')
                 has_error = True
 
         debug(
@@ -553,7 +556,7 @@ def handle_drums(content, part_name):
         '''
 
     # Let the user decide if he/she wants to display tom markers errors
-    # This may lead to false positives as tom markers are authored convergin a whole section instead of
+    # This may lead to false positives as tom markers are authored covering a whole section instead of
     # having gems per note
     if CONST_TOM_MARKERS:
         debug("", True)
@@ -621,7 +624,7 @@ def handle_drums(content, part_name):
                             drumtype + '_fills_errors'] += '<div class="row-fluid"><span class="span12"><strong>{}</strong> {} starting right after drum fill #{}</span></div>'.format(
                             format_location(od_midi_note.pos), num_to_text[od_midi_note.value], index + 1)
                         has_error = True
-                    # Is a regular overlpa so error message
+                    # Is a regular overlap so error message
                     else:
                         overlap_fill_overdrive.append(notes_item.pos)
                         debug("Found {} overlap in Fill #{} at {} - [ {},{} ] )".format(num_to_text[od_midi_note.value],
@@ -632,7 +635,7 @@ def handle_drums(content, part_name):
                             drumtype + '_fills_errors'] += '<div class="row-fluid"><span class="span12"><strong>{}</strong> {} overlaps drum fill #{}</span></div>'.format(
                             format_location(od_midi_note.pos), num_to_text[od_midi_note.value], index + 1)
                         has_error = True
-                if (midi_check == 126):
+                if midi_check == 126:
                     overlap_fill_drum_roll.append(notes_item.pos)
                     debug("Found {} overlap in Fill #{} at {} - [ {},{} ] )".format(num_to_text[od_midi_note.value],
                                                                                     index + 1,
@@ -646,7 +649,7 @@ def handle_drums(content, part_name):
                     has_error = True
 
             # We only need this to be printed once..
-            if (midi_check == 116):
+            if midi_check == 116:
                 debug("Fill #{} starts at {} ends at {} - [ {},{} ]".format(index + 1, format_location(item),
                                                                             format_location(fill_end[index]), item,
                                                                             fill_end[index]), True)
@@ -1480,7 +1483,8 @@ def handle_vocals(content, part_name):
         phrase_end = global_harm2_phase_end
 
     #
-    reserved_words = ['[play]', '[mellow]', '[intense]', '[idle]', '[idle_intense]', '[idle_realtime]', '[tambourine_start]',
+    reserved_words = ['[play]', '[mellow]', '[intense]', '[idle]', '[idle_intense]', '[idle_realtime]',
+                      '[tambourine_start]',
                       '[tambourine_end]', '[cowbell_start]', '[cowbell_end]', '[clap_start]', '[clap_end]']
 
     reserved_syllables = ["I", "I'm", "I'ma", "I'mma", "I'll", "I'd", "I've", "God"]
@@ -1697,7 +1701,7 @@ def handle_vocals(content, part_name):
     # Save all variable sin DICT for output
     localTmpl[output_part_var + "_od_start"] = od_start
     localTmpl[output_part_var + "_od_end"] = od_end
-    if (has_error):
+    if has_error:
         localTmpl[output_part_var + '_error_icon'] = '<i class="icon-exclamation-sign"></i>'
 
     return localTmpl
@@ -2329,7 +2333,7 @@ def handle_events(content, part_name):
     location_section_start = Counter()
     location_section_end = Counter()
     for elem in all_text_events:
-        if (re.match(note_regex, elem)):
+        if re.match(note_regex, elem):
             all_notes.append(elem)
     all_l_notes = re.findall(r"^\/(.*)$", content, re.I | re.MULTILINE)
     noteloc = 0
@@ -2522,8 +2526,8 @@ project_time_signature_denom = 4
 
 # Get the beginning of the song's time signature and BPM.
 (_, _, project_time_signature_num, project_time_signature_denom, project_bpm) = RPR_TimeMap_GetTimeSigAtTime(0, 0,
-                                                                                                                   0, 0,
-                                                                                                                   0)
+                                                                                                             0, 0,
+                                                                                                             0)
 
 project_time_signature_location = [0]
 project_time_signature_location_measure = [0]
@@ -2759,37 +2763,37 @@ with open(OUTPUT_HTML_FILE, 'w') as f:
                     <div class="tab-content">
                         <div class="tab-pane active" id="tab_drums">
                             <div class="span12">'''
-    if (dTmpl['drums_kick_gem'] != ''):
+    if dTmpl['drums_kick_gem'] != '':
         var_html += '''
                                 <div>
                                     <h3 class="alert alert-error">Easy Kick + Gem</h3>
                                     <div>''' + "{}".format(dTmpl['drums_kick_gem']) + '''</div>
                                 </div>'''
-    if (dTmpl['drums_kick_gem_m'] != ''):
+    if dTmpl['drums_kick_gem_m'] != '':
         var_html += '''
                                 <div>
                                     <h3 class="alert alert-error">Medium Kick + Gems</h3>
                                     <div>''' + "{}".format(dTmpl['drums_kick_gem_m']) + '''</div>
                                 </div>'''
-    if (dTmpl['drums_not_found_lower'] != ''):
+    if dTmpl['drums_not_found_lower'] != '':
         var_html += '''
                                 <div>
                                     <h3 class="alert alert-error">Lower Difficulties</h3>
                                     <div>''' + "{}".format(dTmpl['drums_not_found_lower']) + '''</div>
                                 </div>'''
-    if (dTmpl['drums_tom_marker'] != ''):
+    if dTmpl['drums_tom_marker'] != '':
         var_html += '''
                                 <div>
                                     <h3 class="alert alert-error">Tom Markers</h3>
                                     <div>''' + "{}".format(dTmpl['drums_tom_marker']) + '''</div>
                                 </div>'''
-    if (dTmpl['drums_fills_errors'] != ''):
+    if dTmpl['drums_fills_errors'] != '':
         var_html += '''
                                 <div>
                                     <h3 class="alert alert-error">Drum Fills Issues</h3>
                                     <div>''' + "{}".format(dTmpl['drums_fills_errors']) + '''</div>
                                 </div>'''
-    if (dTmpl['drums_general_issues'] != ''):
+    if dTmpl['drums_general_issues'] != '':
         var_html += '''
                                 <div>
                                     <h3 class="alert alert-error">Drum General Issues</h3>
@@ -2800,37 +2804,37 @@ with open(OUTPUT_HTML_FILE, 'w') as f:
                         </div>
                         <div class="tab-pane" id="tab_drums_2x">
                             <div class="span12">'''
-    if (dTmpl['drums_2x_kick_gem'] != ''):
+    if dTmpl['drums_2x_kick_gem'] != '':
         var_html += '''
                                 <div>
                                     <h3 class="alert alert-error">Easy Kick + Gem</h3>
                                     <div>''' + "{}".format(dTmpl['drums_2x_kick_gem']) + '''</div>
                                 </div>'''
-    if (dTmpl['drums_2x_kick_gem_m'] != ''):
+    if dTmpl['drums_2x_kick_gem_m'] != '':
         var_html += '''
                                 <div>
                                     <h3 class="alert alert-error">Medium Kick + Gems</h3>
                                     <div>''' + "{}".format(dTmpl['drums_2x_kick_gem_m']) + '''</div>
                                 </div>'''
-    if (dTmpl['drums_2x_not_found_lower'] != ''):
+    if dTmpl['drums_2x_not_found_lower'] != '':
         var_html += '''
                                 <div>
                                     <h3 class="alert alert-error">Lower Difficulties</h3>
                                     <div>''' + "{}".format(dTmpl['drums_2x_not_found_lower']) + '''</div>
                                 </div>'''
-    if (dTmpl['drums_2x_tom_marker'] != ''):
+    if dTmpl['drums_2x_tom_marker'] != '':
         var_html += '''
                                 <div>
                                     <h3 class="alert alert-error">Tom Markers</h3>
                                     <div>''' + "{}".format(dTmpl['drums_2x_tom_marker']) + '''</div>
                                 </div>'''
-    if (dTmpl['drums_2x_fills_errors'] != ''):
+    if dTmpl['drums_2x_fills_errors'] != '':
         var_html += '''
                                 <div>
                                     <h3 class="alert alert-error">Drum Fills Issues</h3>
                                     <div>''' + "{}".format(dTmpl['drums_2x_fills_errors']) + '''</div>
                                 </div>'''
-    if (dTmpl['drums_2x_general_issues'] != ''):
+    if dTmpl['drums_2x_general_issues'] != '':
         var_html += '''
                                 <div>
                                     <h3 class="alert alert-error">Drum General Issues</h3>
@@ -2841,55 +2845,55 @@ with open(OUTPUT_HTML_FILE, 'w') as f:
                         </div>
                         <div class="tab-pane" id="tab_bass">
                             <div class="span12">'''
-    if (dTmpl['bass_green_oranges_three'] != ''):
+    if dTmpl['bass_green_oranges_three'] != '':
         var_html += '''
                                 <div>
                                     <h3 class="alert alert-error">Gem + G + O</h3>
                                     <div>''' + "{}".format(dTmpl['bass_green_oranges_three']) + '''</div>
                                 </div>'''
-    if (dTmpl['bass_chords_four_notes'] != ''):
+    if dTmpl['bass_chords_four_notes'] != '':
         var_html += '''
                                 <div>
                                     <h3 class="alert alert-error">Four-Note Chords</h3>
                                     <div>''' + "{}".format(dTmpl['bass_chords_four_notes']) + '''</div>
                                 </div>'''
-    if (dTmpl['bass_chords_three_notes'] != ''):
+    if dTmpl['bass_chords_three_notes'] != '':
         var_html += '''
                                 <div>
                                     <h3 class="alert alert-error">Three-Note Chords on Hard</h3>
                                     <div>''' + "{}".format(dTmpl['bass_chords_three_notes']) + '''</div>
                                 </div>'''
-    if (dTmpl['bass_chords_dont_exist'] != ''):
+    if dTmpl['bass_chords_dont_exist'] != '':
         var_html += '''
                                 <div>
                                     <h3 class="alert alert-error">Chord Difficulty Mismatch</h3>
                                     <div>''' + "{}".format(dTmpl['bass_chords_dont_exist']) + '''</div>
                                 </div>'''
-    if (dTmpl['bass_chords_h_green_orange'] != ''):
+    if dTmpl['bass_chords_h_green_orange'] != '':
         var_html += '''
                                 <div>
                                     <h3 class="alert alert-error">G+O Chords on Hard</h3>
                                     <div>''' + "{}".format(dTmpl['bass_chords_h_green_orange']) + '''</div>
                                 </div>'''
-    if (dTmpl['bass_chords_m_chord_combos'] != ''):
+    if dTmpl['bass_chords_m_chord_combos'] != '':
         var_html += '''
                                 <div>
                                     <h3 class="alert alert-error">G+B / G+O / R+O Chords on Medium</h3>
                                     <div>''' + "{}".format(dTmpl['bass_chords_m_chord_combos']) + '''</div>
                                 </div>'''
-    if (dTmpl['bass_chords_m_hopos'] != ''):
+    if dTmpl['bass_chords_m_hopos'] != '':
         var_html += '''
                                 <div>
                                     <h3 class="alert alert-error">Forced HOPOs on Medium</h3>
                                     <div>''' + "{}".format(dTmpl['bass_chords_m_hopos']) + '''</div>
                                 </div>'''
-    if (dTmpl['bass_chords_easy'] != ''):
+    if dTmpl['bass_chords_easy'] != '':
         var_html += '''
                                 <div>
                                     <h3 class="alert alert-error">Easy Chords</h3>
                                     <div>''' + "{}".format(dTmpl['bass_chords_easy']) + '''</div>
                                 </div>'''
-    if (dTmpl['bass_general_issues'] != ''):
+    if dTmpl['bass_general_issues'] != '':
         var_html += '''
                                 <div>
                                     <h3 class="alert alert-error">General Errors / Warnings</h3>
@@ -2900,55 +2904,55 @@ with open(OUTPUT_HTML_FILE, 'w') as f:
                         </div>
                         <div class="tab-pane" id="tab_guitar">
                             <div class="span12">'''
-    if (dTmpl['guitar_green_oranges_three'] != ''):
+    if dTmpl['guitar_green_oranges_three'] != '':
         var_html += '''
                                 <div>
                                     <h3 class="alert alert-error">Gem + G + O</h3>
                                     <div>''' + "{}".format(dTmpl['guitar_green_oranges_three']) + '''</div>
                                 </div>'''
-    if (dTmpl['guitar_chords_four_notes'] != ''):
+    if dTmpl['guitar_chords_four_notes'] != '':
         var_html += '''
                                 <div>
                                     <h3 class="alert alert-error">Four-Note Chords</h3>
                                     <div>''' + "{}".format(dTmpl['guitar_chords_four_notes']) + '''</div>
                                 </div>'''
-    if (dTmpl['guitar_chords_three_notes'] != ''):
+    if dTmpl['guitar_chords_three_notes'] != '':
         var_html += '''
                                 <div>
                                     <h3 class="alert alert-error">Three-Note Chords on Hard</h3>
                                     <div>''' + "{}".format(dTmpl['guitar_chords_three_notes']) + '''</div>
                                 </div>'''
-    if (dTmpl['guitar_chords_dont_exist'] != ''):
+    if dTmpl['guitar_chords_dont_exist'] != '':
         var_html += '''
                                 <div>
                                     <h3 class="alert alert-error">Chord Difficulty Mismatch</h3>
                                     <div>''' + "{}".format(dTmpl['guitar_chords_dont_exist']) + '''</div>
                                 </div>'''
-    if (dTmpl['guitar_chords_h_green_orange'] != ''):
+    if dTmpl['guitar_chords_h_green_orange'] != '':
         var_html += '''
                                 <div>
                                     <h3 class="alert alert-error">G+O Chords on Hard</h3>
                                     <div>''' + "{}".format(dTmpl['guitar_chords_h_green_orange']) + '''</div>
                                 </div>'''
-    if (dTmpl['guitar_chords_m_chord_combos'] != ''):
+    if dTmpl['guitar_chords_m_chord_combos'] != '':
         var_html += '''
                                 <div>
                                     <h3 class="alert alert-error">G+B / G+O / R+O Chords on Medium</h3>
                                     <div>''' + "{}".format(dTmpl['guitar_chords_m_chord_combos']) + '''</div>
                                 </div>'''
-    if (dTmpl['guitar_chords_m_hopos'] != ''):
+    if dTmpl['guitar_chords_m_hopos'] != '':
         var_html += '''
                                 <div>
                                     <h3 class="alert alert-error">Forced HOPOs on Medium</h3>
                                     <div>''' + "{}".format(dTmpl['guitar_chords_m_hopos']) + '''</div>
                                 </div>'''
-    if (dTmpl['guitar_chords_easy'] != ''):
+    if dTmpl['guitar_chords_easy'] != '':
         var_html += '''
                                 <div>
                                     <h3 class="alert alert-error">Easy Chords</h3>
                                     <div>''' + "{}".format(dTmpl['guitar_chords_easy']) + '''</div>
                                 </div>'''
-    if (dTmpl['guitar_general_issues'] != ''):
+    if dTmpl['guitar_general_issues'] != '':
         var_html += '''
                                 <div>
                                     <h3 class="alert alert-error">General Errors / Warnings</h3>
@@ -2960,55 +2964,55 @@ with open(OUTPUT_HTML_FILE, 'w') as f:
                         </div>
                         <div class="tab-pane" id="tab_rhythm">
                             <div class="span12">'''
-    if (dTmpl['rhythm_green_oranges_three'] != ''):
+    if dTmpl['rhythm_green_oranges_three'] != '':
         var_html += '''
                                 <div>
                                     <h3 class="alert alert-error">Gem + G + O</h3>
                                     <div>''' + "{}".format(dTmpl['rhythm_green_oranges_three']) + '''</div>
                                 </div>'''
-    if (dTmpl['rhythm_chords_four_notes'] != ''):
+    if dTmpl['rhythm_chords_four_notes'] != '':
         var_html += '''
                                 <div>
                                     <h3 class="alert alert-error">Four-Note Chords</h3>
                                     <div>''' + "{}".format(dTmpl['rhythm_chords_four_notes']) + '''</div>
                                 </div>'''
-    if (dTmpl['rhythm_chords_three_notes'] != ''):
+    if dTmpl['rhythm_chords_three_notes'] != '':
         var_html += '''
                                 <div>
                                     <h3 class="alert alert-error">Three-Note Chords on Hard</h3>
                                     <div>''' + "{}".format(dTmpl['rhythm_chords_three_notes']) + '''</div>
                                 </div>'''
-    if (dTmpl['rhythm_chords_dont_exist'] != ''):
+    if dTmpl['rhythm_chords_dont_exist'] != '':
         var_html += '''
                                 <div>
                                     <h3 class="alert alert-error">Chord Difficulty Mismatch</h3>
                                     <div>''' + "{}".format(dTmpl['rhythm_chords_dont_exist']) + '''</div>
                                 </div>'''
-    if (dTmpl['rhythm_chords_h_green_orange'] != ''):
+    if dTmpl['rhythm_chords_h_green_orange'] != '':
         var_html += '''
                                 <div>
                                     <h3 class="alert alert-error">G+O Chords on Hard</h3>
                                     <div>''' + "{}".format(dTmpl['rhythm_chords_h_green_orange']) + '''</div>
                                 </div>'''
-    if (dTmpl['rhythm_chords_m_chord_combos'] != ''):
+    if dTmpl['rhythm_chords_m_chord_combos'] != '':
         var_html += '''
                                 <div>
                                     <h3 class="alert alert-error">G+B / G+O / R+O Chords on Medium</h3>
                                     <div>''' + "{}".format(dTmpl['rhythm_chords_m_chord_combos']) + '''</div>
                                 </div>'''
-    if (dTmpl['rhythm_chords_m_hopos'] != ''):
+    if dTmpl['rhythm_chords_m_hopos'] != '':
         var_html += '''
                                 <div>
                                     <h3 class="alert alert-error">Forced HOPOs on Medium</h3>
                                     <div>''' + "{}".format(dTmpl['rhythm_chords_m_hopos']) + '''</div>
                                 </div>'''
-    if (dTmpl['rhythm_chords_easy'] != ''):
+    if dTmpl['rhythm_chords_easy'] != '':
         var_html += '''
                                 <div>
                                     <h3 class="alert alert-error">Easy Chords</h3>
                                     <div>''' + "{}".format(dTmpl['rhythm_chords_easy']) + '''</div>
                                 </div>'''
-    if (dTmpl['rhythm_general_issues'] != ''):
+    if dTmpl['rhythm_general_issues'] != '':
         var_html += '''
                                 <div>
                                     <h3 class="alert alert-error">General Errors / Warnings</h3>
@@ -3059,31 +3063,31 @@ with open(OUTPUT_HTML_FILE, 'w') as f:
                         </div>
                         <div class="tab-pane" id="tab_keys">
                             <div class="span12"> '''
-    if (dTmpl['keys_general_issues'] != ''):
+    if dTmpl['keys_general_issues'] != '':
         var_html += '''
                                 <div>
                                     <h3 class="alert alert-error">General Issues</h3>
                                     <div>''' + "{}".format(dTmpl['keys_general_issues']) + '''</div>
                                 </div>'''
-    if (dTmpl['keys_gems_not_found'] != ''):
+    if dTmpl['keys_gems_not_found'] != '':
         var_html += '''
                                 <div>
                                     <h3 class="alert alert-error">Difficulty Note Mismatch</h3>
                                     <div>''' + "{}".format(dTmpl['keys_gems_not_found']) + '''</div>
                                 </div>'''
-    if (dTmpl['keys_chords_four_notes'] != ''):
+    if dTmpl['keys_chords_four_notes'] != '':
         var_html += '''
                                 <div>
                                     <h3 class="alert alert-error">Four-Note Chords</h3>
                                     <div>''' + "{}".format(dTmpl['keys_chords_four_notes']) + '''</div>
                                 </div>'''
-    if (dTmpl['keys_chords_three_notes'] != ''):
+    if dTmpl['keys_chords_three_notes'] != '':
         var_html += '''
                                 <div>
                                     <h3 class="alert alert-error">Three-Note Chords on Medium</h3>
                                     <div>''' + "{}".format(dTmpl['keys_chords_three_notes']) + '''</div>
                                 </div>'''
-    if (dTmpl['keys_chords_easy'] != ''):
+    if dTmpl['keys_chords_easy'] != '':
         var_html += '''
                                 <div>
                                     <h3 class="alert alert-error">Easy Chords</h3>
@@ -3096,7 +3100,7 @@ with open(OUTPUT_HTML_FILE, 'w') as f:
                         <div class="tab-pane" id="tab_vocals">
                             <div class="span12">'''
 
-    if (len(dTmpl['vocals_od_start']) != len(dTmpl['harm1_od_start'])):
+    if len(dTmpl['vocals_od_start']) != len(dTmpl['harm1_od_start']):
         if has_harm1:
             var_html += '''
                                 <div class="alert alert-error">
@@ -3107,8 +3111,7 @@ with open(OUTPUT_HTML_FILE, 'w') as f:
             '''
     else:
         for index, item in enumerate(dTmpl['vocals_od_start']):
-            if (item != dTmpl['harm1_od_start'][index] or dTmpl['vocals_od_end'][index] != dTmpl['harm1_od_end'][
-                index]):
+            if item != dTmpl['harm1_od_start'][index] or dTmpl['vocals_od_end'][index] != dTmpl['harm1_od_end'][index]:
                 var_html += '''
                             <div class="alert alert-error">
                                 <h3>Vocals Errors (Overdrive)</h3>
@@ -3119,7 +3122,7 @@ with open(OUTPUT_HTML_FILE, 'w') as f:
                                 </div>
                             </div>
                 '''
-    if (dTmpl['vocals_general_issues'] != ''):
+    if dTmpl['vocals_general_issues'] != '':
         var_html += '''
                                 <div>
                                     <h3 class="alert alert-error">General Issues</h3>
@@ -3132,7 +3135,7 @@ with open(OUTPUT_HTML_FILE, 'w') as f:
                         </div>
                         <div class="tab-pane" id="tab_harm1">
                             <div class="span12"> '''
-    if (dTmpl['harm1_general_issues'] != ''):
+    if dTmpl['harm1_general_issues'] != '':
         var_html += '''
                                 <div>
                                     <h3 class="alert alert-error">General Issues</h3>
@@ -3146,7 +3149,7 @@ with open(OUTPUT_HTML_FILE, 'w') as f:
                         </div>
                         <div class="tab-pane" id="tab_harm2">
                             <div class="span12"> '''
-    if (dTmpl['harm2_general_issues'] != ''):
+    if dTmpl['harm2_general_issues'] != '':
         var_html += '''
                                 <div>
                                     <h3 class="alert alert-error">General Issues</h3>
@@ -3160,7 +3163,7 @@ with open(OUTPUT_HTML_FILE, 'w') as f:
                         </div>
                         <div class="tab-pane" id="tab_harm3">
                             <div class="span12"> '''
-    if (dTmpl['harm3_general_issues'] != ''):
+    if dTmpl['harm3_general_issues'] != '':
         var_html += '''
                                 <div>
                                     <h3 class="alert alert-error">General Issues</h3>
@@ -3176,7 +3179,7 @@ with open(OUTPUT_HTML_FILE, 'w') as f:
                             <div class="span12"> 
                             <div class="lead"><h3>Event Types</h3></div>
                             '''
-    if (dTmpl['events_list'] != ''):
+    if dTmpl['events_list'] != '':
         var_html += '''
                                 <div>                                    
                                     <div>''' + "{}".format(dTmpl['events_list']) + '''</div>
@@ -3204,7 +3207,7 @@ with open(OUTPUT_HTML_FILE, 'w') as f:
     for instrument in ['drums', 'drums_2x', 'bass', 'guitar', 'rhythm', 'keys']:
         full_ods = dTmpl[instrument + '_pos_od']
         if len(full_ods) > 0:
-            if (len(full_ods) < 1):
+            if len(full_ods) < 1:
                 full_ods = []
             var_html += ''' <tr > 
                                                 <td>''' + instrument.title() + '''</td>
