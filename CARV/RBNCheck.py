@@ -1698,7 +1698,7 @@ def handle_vocals(content, part_name):
             global has_harm3
             has_harm3 = True
 
-    # Save all variable sin DICT for output
+    # Save all variables in DICT for output
     localTmpl[output_part_var + "_od_start"] = od_start
     localTmpl[output_part_var + "_od_end"] = od_end
     if has_error:
@@ -2590,6 +2590,8 @@ with open(OUTPUT_FILE, 'w') as f:
             item_name = item_name_search[0]
 
         # Grab and decode the track name.
+        if len(track_name_search) == 0:
+            track_name = item_name.replace('"', '')
         if len(track_name_search) > 0:
             track_name = str(track_name_search[0][2])
             track_name = base64.b64decode(track_name)
