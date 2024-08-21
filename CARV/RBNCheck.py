@@ -1532,6 +1532,10 @@ def handle_vocals(content, part_name):
 
                     # Remove or replace any game specific characters from the syllable before we work with it.
                     syllable = syllable.replace("$", "")
+                    syllable = syllable.replace("-# ", "#")
+                    syllable = syllable.replace("-^ ", "^")
+                    syllable = syllable.replace("=# ", "-#")
+                    syllable = syllable.replace("=^ ", "-^")
                     syllable = syllable.replace("- ", "")
                     syllable = syllable.replace("= ", "-")
 
@@ -1539,6 +1543,10 @@ def handle_vocals(content, part_name):
                     if syllable.endswith("^ ") or syllable.endswith("# "):
                         syllable = syllable.replace("^ ", " ")
                         syllable = syllable.replace("# ", " ")
+                        is_spoken = True
+                    elif syllable.endswith("^") or syllable.endswith("#"):
+                        syllable = syllable.replace("^", "")
+                        syllable = syllable.replace("#", "")
                         is_spoken = True
 
                     # At this stage the output is the same as the syllable.
@@ -2567,7 +2575,7 @@ while project_time_signature_next_time != -1:
     # Get the next change.
     project_time_signature_next_time = RPR_TimeMap2_GetNextChangeTime(0, project_time_signature_location_time)
 
-with open(OUTPUT_FILE, 'w') as f:
+with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:
     for media_item in range(0, num_media_items):
         item = RPR_GetMediaItem(0, media_item)
         # bool, item, chunk, maxlen = RPR_GetSetItemState(item, chunk, maxlen);
@@ -2624,7 +2632,7 @@ with open(OUTPUT_FILE, 'w') as f:
         track_content = ""
         media_item = media_item + 1
 
-with open(OUTPUT_HTML_FILE, 'w') as f:
+with open(OUTPUT_HTML_FILE, 'w', encoding='utf-8') as f:
     var_html = '''
 <!DOCTYPE html>
 <html lang="en">
