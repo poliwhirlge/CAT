@@ -24,7 +24,7 @@ def execute(sel):
     global odvar
     global tolerance
     instrument = str(instrument_var.get())
-    odvar = str(odvar.get())
+    odvar = odvar.get()
     
     grid = str(grid_var.get())
     grid_array = { 'Quarter grid' : 480, 'Eighth grid' : 240 }
@@ -50,7 +50,7 @@ def execute(sel):
         C3toolbox.PM(">"+overdrive)
         instrument = C3toolbox.array_instruments[instrument]
         C3toolbox.create_phrase_markers(instrument, grid, 0)
-        
+
     if odvar == 1:
         C3toolbox.add_vocalsoverdrive(overdrive, int(tolerance), 0)
     
@@ -95,9 +95,8 @@ def launch():
     gridOpt = tkinter.OptionMenu(*(helpLf, grid_var) + tuple(OPTIONS))
     gridOpt.grid(row=0, column=2, columnspan=1, sticky="WE", pady=3)
 
-    odvar = tkinter.IntVar(helpLf)
-    odChk = tkinter.Checkbutton(helpLf, \
-               text="Create overdrive markers for Vocals or Harmony 1 (for every number of phrases)", onvalue=1, offvalue=0, variable=odvar)
+    odvar = tkinter.IntVar(helpLf, value=1)
+    odChk = tkinter.Checkbutton(helpLf, text="Create overdrive markers for Vocals or Harmony 1 (for every number of phrases)", onvalue=1, offvalue=0, variable=odvar)
     odChk.grid(row=0, column=3, sticky='W', padx=5, pady=2)
 
     tolerance = tkinter.Entry(helpLf)
