@@ -15,7 +15,7 @@ def execute(selected):
     global instrument_var
     global what_var
     global form
-    what_array = { 'Any note' : 'a', 'Snare' : 's', 'Any tom' : 't', 'Any tom or snare' : 'p' }
+    what_array = { 'Any note' : 'a', 'Snare' : 's', 'Any tom' : 't', 'Any tom or snare' : 'p', 'Multiple gems': 'm' }
     level = str(level_var.get())
     instrument = str(instrument_var.get())
     instrument = C3toolbox.array_instruments[instrument]
@@ -67,7 +67,7 @@ def launch():
     whatLbl = tkinter.Label(helpLf, text="Remove kicks when paired with...")
     whatLbl.grid(row=1, column=3, sticky='E', padx=5, pady=2)
 
-    OPTIONS = ["Any note", "Snare", "Any tom", "Any tom or snare"]
+    OPTIONS = ["Any note", "Snare", "Any tom", "Any tom or snare", 'Multiple gems']
 
     what_var = tkinter.StringVar(helpLf)
     what_var.set(OPTIONS[0]) # default value

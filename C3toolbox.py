@@ -2117,15 +2117,19 @@ def remove_kick(instrument,level, what, selected):
     def has_tom(notes):
         return any(n in notes for n in [110, 111, 112])  # not exhaustive, doesn't handle cases where tom marker doesn't match up with note
 
+    def is_tom_marker(note):
+        return any(tom_marker == note for tom_marker in [110, 111, 112])
+
     n_removed = 0
     array_validobjects = note_objects(array_validnotes)
     for x in range(0, len(array_validobjects)):
         note = array_validobjects[x]
         if any(k for k in kicks if k in note[6]) and len(note[6]) > 1: #There's a kick with other notes, let's check if it needs removing
             if what == 'a' or \
-               (what == 's' and has_snare(note[6])) or \
-               (what == 't' and has_tom(note[6])) or \
-               (what == 'p' and (has_snare(note[6]) or has_tom(note[6]))):
+                    (what == 's' and has_snare(note[6])) or \
+                    (what == 't' and has_tom(note[6])) or \
+                    (what == 'p' and (has_snare(note[6]) or has_tom(note[6]))) or \
+                    (what == 'm' and len([n for n in note[6] if not is_tom_marker(n)]) >= 3):
                 sub_array = [[], [], [], [], [], [], []]
                 for j in range (0, len(note[6])):
                     if note[2][j] not in kicks:
