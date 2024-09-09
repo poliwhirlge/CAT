@@ -59,7 +59,7 @@ def launch():
     OPTIONS = ["Expert", "Hard", "Medium", "Easy"]
 
     level_var = tkinter.StringVar(helpLf)
-    level_var.set(OPTIONS[0]) # default value
+    level_var.set(OPTIONS[-1]) # default value
 
     levelOpt = tkinter.OptionMenu(*(helpLf, level_var) + tuple(OPTIONS))
     levelOpt.grid(row=0, column=2, columnspan=1, sticky="WE", pady=3)
