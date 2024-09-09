@@ -815,7 +815,7 @@ def handle_guitar(content, part_name):
         86: "Hard Yellow",
         85: "Hard Red",
         84: "Hard Green",
-        83: "Hard Opem",
+        83: "Hard Open",
         78: "Medium Force HOPO Off",
         77: "Medium Force HOPO On",
         76: "Medium Orange",
@@ -854,7 +854,7 @@ def handle_guitar(content, part_name):
 
         midi_parts = elem.split()
 
-        if (midi_parts[0].lower() == 'e'):
+        if midi_parts[0].lower() == 'e':
             decval = int(midi_parts[3], 16)
             # Check if the note is an animation... we don't want to check on that yet
             if (decval < 60):
@@ -2383,27 +2383,27 @@ def handle_events(content, part_name):
                                                                                format_location(p_gems[index].pos),
                                                                                p_gems[index].pos), True)
         # Remove NON PRACTICE section events
-        if (text_decode not in non_practice_sections):
+        if text_decode not in non_practice_sections:
             x += 1
             class_name = ''
             error_icon = ''
             error_text = ''
             # Error (Event is not TEXT EVENT type)
             # TO DO: Just one regex for this!
-            if (re.match("^(?!wF)", item) and re.match("^(?!wN)", item) and re.match("^(?!wE)", item)):
+            if re.match("^(?!wF)", item) and re.match("^(?!wN)", item) and re.match("^(?!wE)", item):
                 class_name = 'alert-error bold'
                 error_icon = '<i class="icon-arrow-right"></i>'
                 error_text = 'Invalid text event type'
                 has_error = True
 
             # This practice section already exists.... print error
-            if (repeated_section[text_decode] > 0):
+            if repeated_section[text_decode] > 0:
                 class_name = 'alert-error bold'
                 error_icon = '<i class="icon-arrow-right"></i>'
                 error_text = 'This section is already present earlier'
 
             # Here we add location for practice sections...
-            if (x > 1):
+            if x > 1:
                 sect_ends.append(text_decode)
                 sect_ends_pos.append(p_gems[index].pos)
             sect_start.append(text_decode)
@@ -2455,7 +2455,7 @@ def format_location(note_location):
             _time_1 = (_location_offset / _divisor) + project_time_signature_location_measure[_location_index]
             _time_2 = (_location_offset % _divisor) / (_ppq / (_location_denom / 4))
 
-            return (str(int(_time_1 + 1)) + '.' + str(int(_time_2 + 1)))
+            return str(int(_time_1 + 1)) + '.' + str(int(_time_2 + 1))
 
     return "Error.Error"
 
@@ -2533,9 +2533,7 @@ project_time_signature_num = 4
 project_time_signature_denom = 4
 
 # Get the beginning of the song's time signature and BPM.
-(_, _, project_time_signature_num, project_time_signature_denom, project_bpm) = RPR_TimeMap_GetTimeSigAtTime(0, 0,
-                                                                                                             0, 0,
-                                                                                                             0)
+(_, _, project_time_signature_num, project_time_signature_denom, project_bpm) = RPR_TimeMap_GetTimeSigAtTime(0, 0,0, 0, 0)
 
 project_time_signature_location = [0]
 project_time_signature_location_measure = [0]
@@ -2600,11 +2598,14 @@ with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:
         # Grab and decode the track name.
         if len(track_name_search) == 0:
             track_name = item_name.replace('"', '')
-        if len(track_name_search) > 0:
-            track_name = str(track_name_search[0][2])
-            track_name = base64.b64decode(track_name)
-            track_name = track_name[2:]
-            track_name = codecs.decode(track_name, 'utf-8')
+
+        def decode_track_name(input: str):
+            return codecs.decode(base64.b64decode(input)[2:], 'utf-8')
+
+        decoded_track_names = [decode_track_name(tns) for _, _, tns in track_name_search]
+        filtered_track_names = [n for n in decoded_track_names if 'ENHANCED' not in n]
+        if len(filtered_track_names) > 0:
+            track_name = filtered_track_names[0]
 
         if "rhythm" in item_name.lower():
             track_name = "PART RHYTHM"
@@ -3035,8 +3036,7 @@ with open(OUTPUT_HTML_FILE, 'w', encoding='utf-8') as f:
                         <div class="tab-pane" id="tab_prokeys">
                             <div class="span12">'''
 
-    if (dTmpl['real_keys_x_lane_shift_issues'] + dTmpl['real_keys_h_lane_shift_issues'] + dTmpl[
-        'real_keys_m_lane_shift_issues'] + dTmpl['real_keys_e_lane_shift_issues'] != ''):
+    if dTmpl['real_keys_x_lane_shift_issues'] + dTmpl['real_keys_h_lane_shift_issues'] + dTmpl['real_keys_m_lane_shift_issues'] + dTmpl['real_keys_e_lane_shift_issues'] != '':
         var_html += '''
                                 <div>
                                     <h3 class="alert alert-error">Lane Shift Issues</h3>
@@ -3046,8 +3046,7 @@ with open(OUTPUT_HTML_FILE, 'w', encoding='utf-8') as f:
                                     <div>''' + "{}".format(dTmpl['real_keys_e_lane_shift_issues']) + '''</div>
                                 </div>'''
 
-    if (dTmpl['real_keys_x_range_issues'] + dTmpl['real_keys_h_range_issues'] + dTmpl['real_keys_m_range_issues'] +
-            dTmpl['real_keys_e_range_issues'] != ''):
+    if dTmpl['real_keys_x_range_issues'] + dTmpl['real_keys_h_range_issues'] + dTmpl['real_keys_m_range_issues'] + dTmpl['real_keys_e_range_issues'] != '':
         var_html += '''
                                 <div>
                                     <h3 class="alert alert-error">Range Issues</h3>
@@ -3057,8 +3056,7 @@ with open(OUTPUT_HTML_FILE, 'w', encoding='utf-8') as f:
                                     <div>''' + "{}".format(dTmpl['real_keys_e_range_issues']) + '''</div>
                                 </div>'''
 
-    if (dTmpl['real_keys_x_general_issues'] + dTmpl['real_keys_h_general_issues'] + dTmpl[
-        'real_keys_m_general_issues'] + dTmpl['real_keys_e_general_issues'] != ''):
+    if dTmpl['real_keys_x_general_issues'] + dTmpl['real_keys_h_general_issues'] + dTmpl['real_keys_m_general_issues'] + dTmpl['real_keys_e_general_issues'] != '':
         var_html += '''
                                 <div>
                                     <h3 class="alert alert-error">General Issues</h3>
