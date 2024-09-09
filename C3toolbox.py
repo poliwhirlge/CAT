@@ -5128,7 +5128,10 @@ def reduce_5lane(instrument, levels, hard, medium, easy, chords, reduceChords, r
             note = array_notes[x]
             if notes_dict[note[2]][1] == 'notes_x':
                 note_new = list(note)
-                note_new[2] = note_new[2]-12
+                if notes_dict[note[2]][2] == 'P':
+                    note_new[2] = note_new[2] - 11  # for now, move all open notes to green
+                else:
+                    note_new[2] = note_new[2] - 12
                 array_notes.append(note_new)
 
         array_events_valid = []
@@ -5203,7 +5206,10 @@ def reduce_5lane(instrument, levels, hard, medium, easy, chords, reduceChords, r
             note = array_notes[x]
             if notes_dict[note[2]][1] == 'notes_h':
                 note_new = list(note)
-                note_new[2] = note_new[2]-12
+                if notes_dict[note[2]][2] == 'P':
+                    note_new[2] = note_new[2] - 11  # for now, move all open notes to green
+                else:
+                    note_new[2] = note_new[2] - 12
                 array_notes.append(note_new)
        
         array_events_valid = []
@@ -5284,7 +5290,10 @@ def reduce_5lane(instrument, levels, hard, medium, easy, chords, reduceChords, r
             note = array_notes[x]
             if notes_dict[note[2]][1] == 'notes_m':
                 note_new = list(note)
-                note_new[2] = note_new[2]-12
+                if notes_dict[note[2]][2] == 'P':
+                    note_new[2] = note_new[2] - 11  # for now, move all open notes to green
+                else:
+                    note_new[2] = note_new[2] - 12
                 array_notes.append(note_new)
 
         array_events_valid = []
