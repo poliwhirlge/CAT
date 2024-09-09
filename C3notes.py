@@ -42,6 +42,7 @@ notesname_array = {
             116: ["Overdrive", "od"],
             106: ["Tug Of War P2", "markers"],
             105: ["Tug Of War P1", "markers"],
+            104: ["Tap Marker", "markers"],
             103: ["Solo Marker", "solo"],
             102: ["Expert Force HOPO Off", "markers"],
             101: ["Expert Force HOPO On", "markers"],
