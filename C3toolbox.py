@@ -2067,6 +2067,7 @@ def remove_kick(instrument,level, what, selected):
     #instrument: PART DRUMS or PART DRUMS 2x
     #what: 'a' remove kick when coupled with any other note; 't' when coupled with any tom; 's' when coupled with snare; 'p' when coupled with snare or tom
     global maxlen
+    track_name = instrument
     instrument = tracks_array[instrument]
     array_instrument_data = process_instrument(instrument)
     array_instrument_notes = array_instrument_data[1]
@@ -2084,18 +2085,10 @@ def remove_kick(instrument,level, what, selected):
             instrumentname = instrument_name
     leveltext = "notes_"+leveltext
     notes_dict = notesname_array[notesname_instruments_array[instrumentname]]
-    for key in notes_dict:
-        if notes_dict[key][1] == leveltext:
-            if "Kick" in notes_dict[key][0]:
-                kick = key
-            elif "Red" in notes_dict[key][0]:
-                snare = key
-            elif "Yellow" in notes_dict[key][0]:
-                notey = key
-            elif "Blue" in notes_dict[key][0]:
-                noteb = key
-            elif "Green" in notes_dict[key][0]:
-                noteg = key
+
+    colors = ['Red', 'Yellow', 'Blue', 'Green']
+    snare, notey, noteb, noteg = [[k for k, v in notes_dict.items() if note_text in v[0] and v[1] == leveltext][0] for note_text in colors]
+    kicks = [k for k, v in notes_dict.items() if 'Kick' in v[0] and v[1] == leveltext]
             
     array_validnotes = []
     first_measure = 0
@@ -2117,26 +2110,35 @@ def remove_kick(instrument,level, what, selected):
             array_validnotes.append(note)
         else:
             array_notes.append(note)
-            
+
+    def has_snare(notes):
+        return snare in notes
+
+    def has_tom(notes):
+        return any(n in notes for n in [110, 111, 112])  # not exhaustive, doesn't handle cases where tom marker doesn't match up with note
+
+    n_removed = 0
     array_validobjects = note_objects(array_validnotes)
     for x in range(0, len(array_validobjects)):
         note = array_validobjects[x]
-        if kick in note[6] and len(note[6]) > 1: #There's a kick with other notes, let's check if it needs removing
+        if any(k for k in kicks if k in note[6]) and len(note[6]) > 1: #There's a kick with other notes, let's check if it needs removing
             if what == 'a' or \
-               (what == 's' and snare in note[6]) or \
-               (what == 't' and (110 in note[6] or 111 in note[6] or 112 in note[6])) or \
-               (what == 'p' and (snare in note[6] or 110 in note[6] or 111 in note[6] or 112 in note[6])):
+               (what == 's' and has_snare(note[6])) or \
+               (what == 't' and has_tom(note[6])) or \
+               (what == 'p' and (has_snare(note[6]) or has_tom(note[6]))):
                 sub_array = [[], [], [], [], [], [], []]
                 for j in range (0, len(note[6])):
-                    if note[2][j] != kick:
+                    if note[2][j] not in kicks:
                         for h in range(0, 7):
                             sub_array[h].append(note[h][j])
                 array_temp.append(sub_array)
+                n_removed += 1
             else:
                 array_temp.append(note)
         else: #Add the note
             array_temp.append(note)
     array_notes = add_objects(array_notes, array_temp)
+    RPR_ShowConsoleMsg(f'Removing {n_removed} kick notes from {track_name}:{level}.\n')
     write_midi(instrument, [array_notes, array_notesevents[1]], end_part, start_part)
 
 def single_pedal(level, how, selected):
