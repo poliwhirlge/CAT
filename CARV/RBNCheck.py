@@ -110,6 +110,7 @@ from configparser import ConfigParser
 from reaper_python import *
 from reaper_python import RPR_ShowConsoleMsg as console_msg
 from render_html import write_html_output
+from util import TimeSignature, TimeSignatureChange, TimeSignatureMap
 import importlib
 import codecs
 
@@ -414,15 +415,15 @@ def handle_drums(content, part_name):
         if midi_parts[0].lower() == 'e' and re.search("^9", midi_parts[2]):
             l_gems.append(Note(decval, noteloc))
             debug("Starts with 9: Midi # {}, MBT {}, Type {} ".format(str(decval), str(noteloc), str(midi_parts[2])))
-            debug("{} at {}".format(num_to_text[decval], format_location(noteloc)), True)
+            debug("{} at {}".format(num_to_text[decval], time_sig_map.tick_to_measure_str(noteloc)), True)
         elif midi_parts[0].lower() == 'e' and re.search("^8", midi_parts[2]):
             r_gems.append(Note(decval, noteloc))
             debug("Starts with 8: Midi # {}, MBT {}, Type {} ".format(str(decval), str(noteloc), str(midi_parts[2])))
-            debug("{} at {}".format(num_to_text[decval], format_location(noteloc)), True)
+            debug("{} at {}".format(num_to_text[decval], time_sig_map.tick_to_measure_str(noteloc)), True)
         else:
             debug("Text Event: Midi # {}, MBT {}, Type {}, Extra {} ".format(str(decval), str(noteloc),
                                                                              str(midi_parts[1]), str(midi_parts[2])))
-            debug("{} at {}".format("None", format_location(noteloc)), True)
+            debug("{} at {}".format("None", time_sig_map.tick_to_measure_str(noteloc)), True)
             debug("")
 
     # Drum Validation
@@ -463,16 +464,16 @@ def handle_drums(content, part_name):
 
                 # Easy Check Kick + Gem
                 if notes_pads[kick_note] > 0 and diff_index == 0:
-                    debug("Found Kick + Gem at {}".format(format_location(kick_note)), True)
+                    debug("Found Kick + Gem at {}".format(time_sig_map.tick_to_measure_str(kick_note)), True)
                     localTmpl[drumtype + '_kick_gem'] += '<div class="row-fluid"><span class="span12"><strong>' + str(
-                        format_location(kick_note)) + '</strong> Kick + Gem</span></div>'
+                        time_sig_map.tick_to_measure_str(kick_note)) + '</strong> Kick + Gem</span></div>'
                     has_error = True
 
                 # Medium Check Kick + Gems
                 if notes_pads[kick_note] > 1 and diff_index == 1:
-                    debug("Found Kick + Gems at {}".format(format_location(kick_note)), True)
+                    debug("Found Kick + Gems at {}".format(time_sig_map.tick_to_measure_str(kick_note)), True)
                     localTmpl[drumtype + '_kick_gem_m'] += '<div class="row-fluid"><span class="span12"><strong>' + str(
-                        format_location(kick_note)) + '</strong> Kick + Gems</span></div>'
+                        time_sig_map.tick_to_measure_str(kick_note)) + '</strong> Kick + Gems</span></div>'
                     has_error = True
 
             debug(
@@ -484,10 +485,10 @@ def handle_drums(content, part_name):
         for pad_note in notes_pads:
 
             if notes_pads[pad_note] > 2:
-                debug("Found Kick + Gem at {}".format(format_location(pad_note)), True)
+                debug("Found Kick + Gem at {}".format(time_sig_map.tick_to_measure_str(pad_note)), True)
                 localTmpl[drumtype + '_general_issues'] += (
                         '<div class="row-fluid"><span class="span12"><strong>' + str(
-                    format_location(pad_note)) + '</strong> ' + number_name[
+                    time_sig_map.tick_to_measure_str(pad_note)) + '</strong> ' + number_name[
                             notes_pads[pad_note]] + ' Pads hit simultaneously on ' + diff_name[
                             diff_index] + '</span></div>')
                 has_error = True
@@ -520,38 +521,38 @@ def handle_drums(content, part_name):
         for midi_note in midi_notes[0]:
             for notes_item in filter(lambda x: x.value == midi_note, l_gems):
                 if not ( all_o_expert[ notes_item.pos ] ):
-                    debug( "{} not found on Expert at {}".format( num_to_text[ midi_note ], format_location( notes_item.pos ) ) , True )
+                    debug( "{} not found on Expert at {}".format( num_to_text[ midi_note ], time_sig_map.tick_to_measure_str( notes_item.pos ) ) , True )
         #Snares
         for midi_note in midi_notes[1]:
             for notes_item in filter(lambda x: x.value == midi_note, l_gems):
                 if not ( all_r_expert[ notes_item.pos ] ):
-                    debug( "{} not found on Expert at {}".format( num_to_text[ midi_note ], format_location( notes_item.pos ) ) , True )
+                    debug( "{} not found on Expert at {}".format( num_to_text[ midi_note ], time_sig_map.tick_to_measure_str( notes_item.pos ) ) , True )
                         
-                    localTmpl['drums_not_found_lower'] += '<div class="row-fluid"><span class="span12"><strong>{}</strong> {} not found on Expert</span></div>'.format( format_location( notes_item.pos ),num_to_text[ midi_note ] )
+                    localTmpl['drums_not_found_lower'] += '<div class="row-fluid"><span class="span12"><strong>{}</strong> {} not found on Expert</span></div>'.format( time_sig_map.tick_to_measure_str( notes_item.pos ),num_to_text[ midi_note ] )
                     has_error = True
         #Yellow (Tom / Hat)
         for midi_note in midi_notes[2]:
             for notes_item in filter(lambda x: x.value == midi_note, l_gems):
                 if not ( all_y_expert[ notes_item.pos ] ):
-                    debug( "{} not found on Expert at {}".format( num_to_text[ midi_note ], format_location( notes_item.pos ) ) , True )
+                    debug( "{} not found on Expert at {}".format( num_to_text[ midi_note ], time_sig_map.tick_to_measure_str( notes_item.pos ) ) , True )
                     
-                    localTmpl['drums_not_found_lower'] += '<div class="row-fluid"><span class="span12"><strong>{}</strong> {} not found on Expert</span></div>'.format( format_location( notes_item.pos ),num_to_text[ midi_note ] )
+                    localTmpl['drums_not_found_lower'] += '<div class="row-fluid"><span class="span12"><strong>{}</strong> {} not found on Expert</span></div>'.format( time_sig_map.tick_to_measure_str( notes_item.pos ),num_to_text[ midi_note ] )
                     has_error = True
         #Blue (Tom / Cymbal)
         for midi_note in midi_notes[3]:
             for notes_item in filter(lambda x: x.value == midi_note, l_gems):
                 if not ( all_b_expert[ notes_item.pos ] ):
-                    debug( "{} not found on Expert at {}".format( num_to_text[ midi_note ], format_location( notes_item.pos ) ) , True )
+                    debug( "{} not found on Expert at {}".format( num_to_text[ midi_note ], time_sig_map.tick_to_measure_str( notes_item.pos ) ) , True )
                     
-                    localTmpl['drums_not_found_lower'] += '<div class="row-fluid"><span class="span12"><strong>{}</strong> {} not found on Expert</span></div>'.format( format_location( notes_item.pos ),num_to_text[ midi_note ] )
+                    localTmpl['drums_not_found_lower'] += '<div class="row-fluid"><span class="span12"><strong>{}</strong> {} not found on Expert</span></div>'.format( time_sig_map.tick_to_measure_str( notes_item.pos ),num_to_text[ midi_note ] )
                     has_error = True
         #Green (Tom / Cymbal)
         for midi_note in midi_notes[4]:
             for notes_item in filter(lambda x: x.value == midi_note, l_gems):
                 if not ( all_g_expert[ notes_item.pos ] ):
-                    debug( "{} not found on Expert at {}".format( num_to_text[ midi_note ], format_location( notes_item.pos ) ) , True )
+                    debug( "{} not found on Expert at {}".format( num_to_text[ midi_note ], time_sig_map.tick_to_measure_str( notes_item.pos ) ) , True )
                     
-                    localTmpl['drums_not_found_lower'] += '<div class="row-fluid"><span class="span12"><strong>{}</strong> {} not found on Expert</span></div>'.format( format_location( notes_item.pos ),num_to_text[ midi_note ] )
+                    localTmpl['drums_not_found_lower'] += '<div class="row-fluid"><span class="span12"><strong>{}</strong> {} not found on Expert</span></div>'.format( time_sig_map.tick_to_measure_str( notes_item.pos ),num_to_text[ midi_note ] )
                     has_error = True
         debug( "=================== ENDS MISSING GEMS LOWER DIFFICULTIES===================", True )
         '''
@@ -569,11 +570,11 @@ def handle_drums(content, part_name):
 
         for midi_note_pos in all_tom_anim:
             if not ([x for x in l_gems if (x.value in [110, 111, 112]) and x.pos == midi_note_pos]):
-                debug("Tom Marker not found for Drum Animation at {}".format(format_location(midi_note_pos)), True)
+                debug("Tom Marker not found for Drum Animation at {}".format(time_sig_map.tick_to_measure_str(midi_note_pos)), True)
 
                 localTmpl[
                     drumtype + '_tom_marker'] += '<div class="row-fluid"><span class="span12"><strong>{}</strong> tom marker not found in drum animations</span></div>'.format(
-                    format_location(midi_note_pos))
+                    time_sig_map.tick_to_measure_str(midi_note_pos))
                 has_error = True
         debug("=================== ENDS ANIMATION BUT NO PRO MARKER ===================", True)
 
@@ -590,12 +591,12 @@ def handle_drums(content, part_name):
     # Start notes
     for notes_item in [x for x in l_gems if x.value == 120]:
         fill_start.append(notes_item.pos)
-        debug("Found {} at {} - ( {}, {} )".format(num_to_text[notes_item.value], format_location(notes_item.pos),
+        debug("Found {} at {} - ( {}, {} )".format(num_to_text[notes_item.value], time_sig_map.tick_to_measure_str(notes_item.pos),
                                                    notes_item.value, notes_item.pos), True)
         # End notes
     for notes_item in [x for x in r_gems if x.value == 120]:
         fill_end.append(notes_item.pos)
-        debug("Found {} at {} - ( {}, {} )".format(num_to_text[notes_item.value], format_location(notes_item.pos),
+        debug("Found {} at {} - ( {}, {} )".format(num_to_text[notes_item.value], time_sig_map.tick_to_measure_str(notes_item.pos),
                                                    notes_item.value, notes_item.pos), True)
         # Check for OD and drum rolls inside any DRUM fills
     for midi_check in [116, 126]:
@@ -607,52 +608,52 @@ def handle_drums(content, part_name):
                     if od_midi_note.pos == item:
                         overlap_fill_overdrive_start.append(notes_item.pos)
                         debug("WARNING: Found {} ending right before Fill #{} at {} - [ {},{} ] )".format(
-                            num_to_text[od_midi_note.value], index + 1, format_location(od_midi_note.pos),
+                            num_to_text[od_midi_note.value], index + 1, time_sig_map.tick_to_measure_str(od_midi_note.pos),
                             od_midi_note.value, od_midi_note.pos), True)
 
                         localTmpl[
                             drumtype + '_fills_errors'] += '<div class="row-fluid"><span class="span12"><strong>{}</strong> {} ending right before drum fill #{}</span></div>'.format(
-                            format_location(od_midi_note.pos), num_to_text[od_midi_note.value], index + 1)
+                            time_sig_map.tick_to_measure_str(od_midi_note.pos), num_to_text[od_midi_note.value], index + 1)
                         has_error = True
                     # If the od starts right after the drum fill give a warning
                     elif od_midi_note.pos == fill_end[index]:
                         overlap_fill_overdrive_end.append(notes_item.pos)
                         debug("Found {} starting right after in Fill #{} at {} - [ {},{} ] )".format(
-                            num_to_text[od_midi_note.value], index + 1, format_location(od_midi_note.pos),
+                            num_to_text[od_midi_note.value], index + 1, time_sig_map.tick_to_measure_str(od_midi_note.pos),
                             od_midi_note.value, od_midi_note.pos), True)
 
                         localTmpl[
                             drumtype + '_fills_errors'] += '<div class="row-fluid"><span class="span12"><strong>{}</strong> {} starting right after drum fill #{}</span></div>'.format(
-                            format_location(od_midi_note.pos), num_to_text[od_midi_note.value], index + 1)
+                            time_sig_map.tick_to_measure_str(od_midi_note.pos), num_to_text[od_midi_note.value], index + 1)
                         has_error = True
                     # Is a regular overlap so error message
                     else:
                         overlap_fill_overdrive.append(notes_item.pos)
                         debug("Found {} overlap in Fill #{} at {} - [ {},{} ] )".format(num_to_text[od_midi_note.value],
-                                                                                        index + 1, format_location(
+                                                                                        index + 1, time_sig_map.tick_to_measure_str(
                                 od_midi_note.pos), od_midi_note.value, od_midi_note.pos), True)
 
                         localTmpl[
                             drumtype + '_fills_errors'] += '<div class="row-fluid"><span class="span12"><strong>{}</strong> {} overlaps drum fill #{}</span></div>'.format(
-                            format_location(od_midi_note.pos), num_to_text[od_midi_note.value], index + 1)
+                            time_sig_map.tick_to_measure_str(od_midi_note.pos), num_to_text[od_midi_note.value], index + 1)
                         has_error = True
                 if midi_check == 126:
                     overlap_fill_drum_roll.append(notes_item.pos)
                     debug("Found {} overlap in Fill #{} at {} - [ {},{} ] )".format(num_to_text[od_midi_note.value],
                                                                                     index + 1,
-                                                                                    format_location(od_midi_note.pos),
+                                                                                    time_sig_map.tick_to_measure_str(od_midi_note.pos),
                                                                                     od_midi_note.value,
                                                                                     od_midi_note.pos), True)
 
                     localTmpl[
                         drumtype + '_fills_errors'] += '<div class="row-fluid"><span class="span12"><strong>{}</strong> {} overlaps drum fill #{}</span></div>'.format(
-                        format_location(od_midi_note.pos), num_to_text[od_midi_note.value], index + 1)
+                        time_sig_map.tick_to_measure_str(od_midi_note.pos), num_to_text[od_midi_note.value], index + 1)
                     has_error = True
 
             # We only need this to be printed once..
             if midi_check == 116:
-                debug("Fill #{} starts at {} ends at {} - [ {},{} ]".format(index + 1, format_location(item),
-                                                                            format_location(fill_end[index]), item,
+                debug("Fill #{} starts at {} ends at {} - [ {},{} ]".format(index + 1, time_sig_map.tick_to_measure_str(item),
+                                                                            time_sig_map.tick_to_measure_str(fill_end[index]), item,
                                                                             fill_end[index]), True)
     debug("=================== ENDS GENERAL DRUMS: Drum Fills (OD and Drum Roll Validation) ===================", True)
 
@@ -667,13 +668,13 @@ def handle_drums(content, part_name):
     for notes_item in [x for x in l_gems if x.value == 103]:
         solo_start.append(notes_item.pos)
         debug_extra(
-            "Found start {} at {} - ( {}, {} )".format(num_to_text[notes_item.value], format_location(notes_item.pos),
+            "Found start {} at {} - ( {}, {} )".format(num_to_text[notes_item.value], time_sig_map.tick_to_measure_str(notes_item.pos),
                                                        notes_item.value, notes_item.pos), True)
         # End notes
     for notes_item in [x for x in r_gems if x.value == 103]:
         solo_end.append(notes_item.pos)
         debug_extra(
-            "Found end {} at {} - ( {}, {} )".format(num_to_text[notes_item.value], format_location(notes_item.pos),
+            "Found end {} at {} - ( {}, {} )".format(num_to_text[notes_item.value], time_sig_map.tick_to_measure_str(notes_item.pos),
                                                      notes_item.value, notes_item.pos), True)
         # Check for any gem under solo marker... we need at least one gem for the solo to be valid
     for index, item in enumerate(solo_start):
@@ -691,8 +692,8 @@ def handle_drums(content, part_name):
             counter[item] += 1
             gems_text += 'Expert + '
 
-        debug("INFO: Solo Marker #{} starts at {} ends at {} - [ {},{} ]".format(index + 1, format_location(item),
-                                                                                 format_location(solo_end[index]), item,
+        debug("INFO: Solo Marker #{} starts at {} ends at {} - [ {},{} ]".format(index + 1, time_sig_map.tick_to_measure_str(item),
+                                                                                 time_sig_map.tick_to_measure_str(solo_end[index]), item,
                                                                                  solo_end[index]), True)
 
         if (counter[item] < 4):
@@ -865,15 +866,15 @@ def handle_guitar(content, part_name):
         if midi_parts[0].lower() == 'e' and re.search("^9", midi_parts[2]):
             l_gems.append(Note(decval, noteloc))
             debug("Starts with 9: Midi # {}, MBT {}, Type {} ".format(str(decval), str(noteloc), str(midi_parts[2])))
-            debug("{} at {}".format(num_to_text[decval], format_location(noteloc)), True)
+            debug("{} at {}".format(num_to_text[decval], time_sig_map.tick_to_measure_str(noteloc)), True)
         elif midi_parts[0].lower() == 'e' and re.search("^8", midi_parts[2]):
             r_gems.append(Note(decval, noteloc))
             debug("Starts with 8: Midi # {}, MBT {}, Type {} ".format(str(decval), str(noteloc), str(midi_parts[2])))
-            debug("{} at {}".format(num_to_text[decval], format_location(noteloc)), True)
+            debug("{} at {}".format(num_to_text[decval], time_sig_map.tick_to_measure_str(noteloc)), True)
         else:
             debug("Text Event: Midi # {}, MBT {}, Type {}, Extra {} ".format(str(decval), str(noteloc),
                                                                              str(midi_parts[1]), str(midi_parts[2])))
-            debug("{} at {}".format("None", format_location(noteloc)), True)
+            debug("{} at {}".format("None", time_sig_map.tick_to_measure_str(noteloc)), True)
             debug("")
     # Get three chords containing B+O
     debug("", True)
@@ -889,11 +890,11 @@ def handle_guitar(content, part_name):
             if counter_positions[notes_item.pos] < 1:
                 counter_positions[notes_item.pos] += 1
             debug("ERROR: Found {} paired with Green and Orange gems at {} - ( {}, {} )".format(
-                num_to_text[notes_item.value], format_location(notes_item.pos), notes_item.value, notes_item.pos), True)
+                num_to_text[notes_item.value], time_sig_map.tick_to_measure_str(notes_item.pos), notes_item.value, notes_item.pos), True)
 
             localTmpl[
                 output_part_var + "_green_oranges_three"] += '<div class="row-fluid"><span class="span12"><strong class="">{}</strong> <span>{} paired with Green and Orange gems</span> </span></div>'.format(
-                format_location(notes_item.pos), num_to_text[notes_item.value])
+                time_sig_map.tick_to_measure_str(notes_item.pos), num_to_text[notes_item.value])
             has_error = True
 
     # debug(str(extra_gems_chords), True)
@@ -910,15 +911,15 @@ def handle_guitar(content, part_name):
         if counter[item.pos] < 1:
             for midi_note in [x for x in l_gems if x.pos == item.pos and (96 <= x.value <= 100)]:
                 debug_extra(
-                    "Found {} at {} - ( {}, {} )".format(num_to_text[midi_note.value], format_location(midi_note.pos),
+                    "Found {} at {} - ( {}, {} )".format(num_to_text[midi_note.value], time_sig_map.tick_to_measure_str(midi_note.pos),
                                                          midi_note.value, midi_note.pos), True)
                 counter_internal += 1
             if counter_internal >= 4:
-                debug("ERROR: Found 4 notes chord at {} - ( {} )".format(format_location(item.pos), item.pos), True)
+                debug("ERROR: Found 4 notes chord at {} - ( {} )".format(time_sig_map.tick_to_measure_str(item.pos), item.pos), True)
 
                 localTmpl[
                     output_part_var + "_chords_four_notes"] += '<div class="row-fluid"><span class="span12"><strong class="">{}</strong> <span>Found four-note chord</span> </span></div>'.format(
-                    format_location(item.pos), num_to_text[item.value])
+                    time_sig_map.tick_to_measure_str(item.pos), num_to_text[item.value])
                 has_error = True
             elif counter_internal >= 2:
                 counter_chord_expert[item.pos] = 1
@@ -937,28 +938,28 @@ def handle_guitar(content, part_name):
         if counter[item.pos] < 1:
             for midi_note in [x for x in l_gems if x.pos == item.pos and (x.value >= 84 and x.value <= 88)]:
                 debug_extra(
-                    "Found {} at {} - ( {}, {} )".format(num_to_text[midi_note.value], format_location(midi_note.pos),
+                    "Found {} at {} - ( {}, {} )".format(num_to_text[midi_note.value], time_sig_map.tick_to_measure_str(midi_note.pos),
                                                          midi_note.value, midi_note.pos), True)
                 counter_internal += 1
             if counter_internal >= 3:
-                debug("ERROR: Found 3 notes chord at {} - ( {} )".format(format_location(item.pos), item.pos), True)
+                debug("ERROR: Found 3 notes chord at {} - ( {} )".format(time_sig_map.tick_to_measure_str(item.pos), item.pos), True)
 
                 localTmpl[
                     output_part_var + "_chords_three_notes"] += '<div class="row-fluid"><span class="span12"><strong class="">{}</strong> <span>Found three-note chord</span> </span></div>'.format(
-                    format_location(item.pos), num_to_text[item.value])
+                    time_sig_map.tick_to_measure_str(item.pos), num_to_text[item.value])
                 has_error = True
             elif counter_internal <= 1:
                 debug_extra(
-                    "Single {} note found at {} - ( {},{} )".format(num_to_text[item.value], format_location(item.pos),
+                    "Single {} note found at {} - ( {},{} )".format(num_to_text[item.value], time_sig_map.tick_to_measure_str(item.pos),
                                                                     item.value, item.pos), True)
                 if counter_chord_expert[item.pos] > 0:
                     debug(
-                        "ERROR: Expert chord not found here at {} - ( {} )".format(format_location(item.pos), item.pos),
+                        "ERROR: Expert chord not found here at {} - ( {} )".format(time_sig_map.tick_to_measure_str(item.pos), item.pos),
                         True)
 
                     localTmpl[
                         output_part_var + "_chords_dont_exist"] += '<div class="row-fluid"><span class="span12"><strong class="">{}</strong> <span>Expert chord not found on Hard</span> </span></div>'.format(
-                        format_location(item.pos), num_to_text[item.value])
+                        time_sig_map.tick_to_measure_str(item.pos), num_to_text[item.value])
                     has_error = True
 
             counter_internal = 0
@@ -974,16 +975,16 @@ def handle_guitar(content, part_name):
         if (counter[item.pos] < 1):
             for midi_note in [x for x in l_gems if x.pos == item.pos and (x.value == 84 or x.value == 88)]:
                 debug_extra(
-                    "Found {} at {} - ( {}, {} )".format(num_to_text[midi_note.value], format_location(midi_note.pos),
+                    "Found {} at {} - ( {}, {} )".format(num_to_text[midi_note.value], time_sig_map.tick_to_measure_str(midi_note.pos),
                                                          midi_note.value, midi_note.pos), True)
                 counter_internal += 1
             if (counter_internal >= 2):
-                debug("ERROR: Found Green and Orange chord at {} - ( {} )".format(format_location(item.pos), item.pos),
+                debug("ERROR: Found Green and Orange chord at {} - ( {} )".format(time_sig_map.tick_to_measure_str(item.pos), item.pos),
                       True)
 
                 localTmpl[
                     output_part_var + "_chords_h_green_orange"] += '<div class="row-fluid"><span class="span12"><strong class="">{}</strong> <span>Green and Orange chord not allowed</span> </span></div>'.format(
-                    format_location(item.pos))
+                    time_sig_map.tick_to_measure_str(item.pos))
                 has_error = True
 
             counter_internal = 0
@@ -1005,16 +1006,16 @@ def handle_guitar(content, part_name):
                 for midi_note in [x for x in l_gems if
                                   x.pos == item.pos and (x.value == item_note[0] or x.value == item_note[1])]:
                     debug_extra("Found {} at {} - ( {}, {} )".format(num_to_text[midi_note.value],
-                                                                     format_location(midi_note.pos), midi_note.value,
+                                                                     time_sig_map.tick_to_measure_str(midi_note.pos), midi_note.value,
                                                                      midi_note.pos), True)
                     counter_internal += 1
                 if (counter_internal >= 2):
                     debug("ERROR: Found {} chord at {} - ( {} )".format(chord_combination[idx_notes],
-                                                                        format_location(item.pos), item.pos), True)
+                                                                        time_sig_map.tick_to_measure_str(item.pos), item.pos), True)
 
                     localTmpl[
                         output_part_var + "_chords_m_chord_combos"] += '<div class="row-fluid"><span class="span12"><strong class="">{}</strong> <span>{} chord not allowed</span> </span></div>'.format(
-                        format_location(item.pos), chord_combination[idx_notes])
+                        time_sig_map.tick_to_measure_str(item.pos), chord_combination[idx_notes])
                     has_error = True
 
                 counter_internal = 0
@@ -1030,12 +1031,12 @@ def handle_guitar(content, part_name):
     debug("=================== MEDIUM " + part_name + ": No Force hopos ===================", True)
     # for index, item in enumerate(l_gems):
     for midi_note in [x for x in l_gems if x.value == 77 or x.value == 78]:
-        debug("ERROR: Found {} at {} - ( {} )".format(num_to_text[midi_note.value], format_location(midi_note.pos),
+        debug("ERROR: Found {} at {} - ( {} )".format(num_to_text[midi_note.value], time_sig_map.tick_to_measure_str(midi_note.pos),
                                                       midi_note.pos), True)
 
         localTmpl[
             output_part_var + "_chords_m_hopos"] += '<div class="row-fluid"><span class="span12"><strong class="">{}</strong> <span>Forced HOPOs not allowed</span> </span></div>'.format(
-            format_location(item.pos))
+            time_sig_map.tick_to_measure_str(item.pos))
         has_error = True
     debug("=================== ENDS MEDIUM " + part_name + ": No Force hopos ===================", True)
 
@@ -1046,11 +1047,11 @@ def handle_guitar(content, part_name):
     debug("=================== MEDIUM " + part_name + ": No expert chords ===================", True)
     for item in counter_chord_expert:
         if len([x for x in l_gems if x.pos == item and (72 <= x.value <= 76)]) == 1:
-            debug("Expert chord not found here at {} - ( {} )".format(format_location(item), item), True)
+            debug("Expert chord not found here at {} - ( {} )".format(time_sig_map.tick_to_measure_str(item), item), True)
 
             localTmpl[
                 output_part_var + "_chords_dont_exist"] += '<div class="row-fluid"><span class="span12"><strong class="">{}</strong> <span>Expert chord not found on Medium</span> </span></div>'.format(
-                format_location(item))
+                time_sig_map.tick_to_measure_str(item))
             has_error = True
     debug("=================== ENDS MEDIUM " + part_name + ": No expert chords ===================", True)
 
@@ -1061,7 +1062,7 @@ def handle_guitar(content, part_name):
     debug("=================== EASY " + part_name + ": No Chords ===================", True)
     for notes_item in [x for x in l_gems if 60 <= x.value <= 64]:
         debug_extra(
-            "Found {} at {} - ( {}, {}): ".format(num_to_text[notes_item.value], format_location(notes_item.pos),
+            "Found {} at {} - ( {}, {}): ".format(num_to_text[notes_item.value], time_sig_map.tick_to_measure_str(notes_item.pos),
                                                   notes_item.value, notes_item.pos), True)
         counter_global[(notes_item.pos)] += 1
         gems_in_chord[(notes_item.pos, notes_item.value)] += 1
@@ -1072,11 +1073,11 @@ def handle_guitar(content, part_name):
             gems_text = ''
             for x, v in [x_y1 for x_y1 in list(gems_in_chord.keys()) if x_y1[0] == b]:
                 gems_text = gems_text + num_to_text[v] + " + "
-            debug("ERROR: Found {} chord at {} - ( {} )".format(gems_text[:-3], format_location(b), b), True)
+            debug("ERROR: Found {} chord at {} - ( {} )".format(gems_text[:-3], time_sig_map.tick_to_measure_str(b), b), True)
 
             localTmpl[
                 output_part_var + "_chords_easy"] += '<div class="row-fluid"><span class="span12"><strong class="">{}</strong> <span>{} chord not allowed</span> </span></div>'.format(
-                format_location(b), gems_text[:-3])
+                time_sig_map.tick_to_measure_str(b), gems_text[:-3])
             has_error = True
     counter_chord_easy = [x_y3 for x_y3 in iter(counter_global.items()) if x_y3[1] >= 2]
 
@@ -1093,13 +1094,13 @@ def handle_guitar(content, part_name):
     for notes_item in [x for x in l_gems if x.value == 103]:
         solo_start.append(notes_item.pos)
         debug_extra(
-            "Found start {} at {} - ( {}, {} )".format(num_to_text[notes_item.value], format_location(notes_item.pos),
+            "Found start {} at {} - ( {}, {} )".format(num_to_text[notes_item.value], time_sig_map.tick_to_measure_str(notes_item.pos),
                                                        notes_item.value, notes_item.pos), True)
         # End notes
     for notes_item in [x for x in r_gems if x.value == 103]:
         solo_end.append(notes_item.pos)
         debug_extra(
-            "Found end {} at {} - ( {}, {} )".format(num_to_text[notes_item.value], format_location(notes_item.pos),
+            "Found end {} at {} - ( {}, {} )".format(num_to_text[notes_item.value], time_sig_map.tick_to_measure_str(notes_item.pos),
                                                      notes_item.value, notes_item.pos), True)
         # Check for any gem under solo marker... we need at least one gem for the solo to be valid
     # for midi_check in [60,61,62,63,64,72,73,74,75,76,84,85,86,87,88,96,97,98,99,100]:
@@ -1118,8 +1119,8 @@ def handle_guitar(content, part_name):
             counter[item] += 1
             gems_text += 'Expert + '
 
-        debug("INFO: Solo Marker #{} starts at {} ends at {} - [ {},{} ]".format(index + 1, format_location(item),
-                                                                                 format_location(solo_end[index]), item,
+        debug("INFO: Solo Marker #{} starts at {} ends at {} - [ {},{} ]".format(index + 1, time_sig_map.tick_to_measure_str(item),
+                                                                                 time_sig_map.tick_to_measure_str(solo_end[index]), item,
                                                                                  solo_end[index]), True)
 
         if counter[item] < 4:
@@ -1165,9 +1166,9 @@ def handle_guitar(content, part_name):
             for notes_item in filter(lambda x: x.value == midi_note, l_gems):
                 counter += 1
                 if not ( all_g_expert[ notes_item.pos ] ):
-                    debug( "ERROR: {} not found on Expert at {}".format( num_to_text[ midi_note ], format_location( notes_item.pos ) ) , True )
+                    debug( "ERROR: {} not found on Expert at {}".format( num_to_text[ midi_note ], time_sig_map.tick_to_measure_str( notes_item.pos ) ) , True )
                 
-                    localTmpl[ output_part_var + "_general_issues"] += '<div class="row-fluid"><span class="span12"><strong class="">{}</strong> <span>{} not found on Expert</span> </span></div>'.format( format_location( notes_item.pos ), num_to_text[ midi_note ] ) 
+                    localTmpl[ output_part_var + "_general_issues"] += '<div class="row-fluid"><span class="span12"><strong class="">{}</strong> <span>{} not found on Expert</span> </span></div>'.format( time_sig_map.tick_to_measure_str( notes_item.pos ), num_to_text[ midi_note ] ) 
                     has_error = True
             if( counter < 1 and has_g):
                 debug( "ERROR: No {} gems not found, must use all nodes used in expert".format( num_to_text[ midi_note ] ) , True )
@@ -1179,9 +1180,9 @@ def handle_guitar(content, part_name):
             counter = 0        
             for notes_item in filter(lambda x: x.value == midi_note, l_gems):
                 if not ( all_r_expert[ notes_item.pos ] ):
-                    debug( "{} not found on Expert at {}".format( num_to_text[ midi_note ], format_location( notes_item.pos ) ) , True )
+                    debug( "{} not found on Expert at {}".format( num_to_text[ midi_note ], time_sig_map.tick_to_measure_str( notes_item.pos ) ) , True )
                 
-                    localTmpl[ output_part_var + "_general_issues"] += '<div class="row-fluid"><span class="span12"><strong class="">{}</strong> <span>{} not found on Expert</span> </span></div>'.format( format_location( notes_item.pos ), num_to_text[ midi_note ] )
+                    localTmpl[ output_part_var + "_general_issues"] += '<div class="row-fluid"><span class="span12"><strong class="">{}</strong> <span>{} not found on Expert</span> </span></div>'.format( time_sig_map.tick_to_measure_str( notes_item.pos ), num_to_text[ midi_note ] )
             if( counter < 1 and has_r):
                 debug( "ERROR: No {} gems not found, must use all nodes used in expert".format( num_to_text[ midi_note ] ) , True )
                 
@@ -1192,9 +1193,9 @@ def handle_guitar(content, part_name):
             counter = 0        
             for notes_item in filter(lambda x: x.value == midi_note, l_gems):
                 if not ( all_y_expert[ notes_item.pos ] ):
-                    debug( "{} not found on Expert at {}".format( num_to_text[ midi_note ], format_location( notes_item.pos ) ) , True )
+                    debug( "{} not found on Expert at {}".format( num_to_text[ midi_note ], time_sig_map.tick_to_measure_str( notes_item.pos ) ) , True )
                 
-                    localTmpl[ output_part_var + "_general_issues"] += '<div class="row-fluid"><span class="span12"><strong class="">{}</strong> <span>{} not found on Expert</span> </span></div>'.format( format_location( notes_item.pos ), num_to_text[ midi_note ] )
+                    localTmpl[ output_part_var + "_general_issues"] += '<div class="row-fluid"><span class="span12"><strong class="">{}</strong> <span>{} not found on Expert</span> </span></div>'.format( time_sig_map.tick_to_measure_str( notes_item.pos ), num_to_text[ midi_note ] )
             if( counter < 1 and has_y):
                 debug( "ERROR: No {} gems not found, must use all nodes used in expert".format( num_to_text[ midi_note ] ) , True )
                 
@@ -1205,9 +1206,9 @@ def handle_guitar(content, part_name):
             counter = 0        
             for notes_item in filter(lambda x: x.value == midi_note, l_gems):
                 if not ( all_b_expert[ notes_item.pos ] ):
-                    debug( "{} not found on Expert at {}".format( num_to_text[ midi_note ], format_location( notes_item.pos ) ) , True )
+                    debug( "{} not found on Expert at {}".format( num_to_text[ midi_note ], time_sig_map.tick_to_measure_str( notes_item.pos ) ) , True )
                 
-                    localTmpl[ output_part_var + "_general_issues"] += '<div class="row-fluid"><span class="span12"><strong class="">{}</strong> <span>{} not found on Expert</span> </span></div>'.format( format_location( notes_item.pos ), num_to_text[ midi_note ] )
+                    localTmpl[ output_part_var + "_general_issues"] += '<div class="row-fluid"><span class="span12"><strong class="">{}</strong> <span>{} not found on Expert</span> </span></div>'.format( time_sig_map.tick_to_measure_str( notes_item.pos ), num_to_text[ midi_note ] )
             if( counter < 1 and has_b):
                 debug( "ERROR: No {} gems not found, must use all nodes used in expert".format( num_to_text[ midi_note ] ) , True )
                 
@@ -1218,9 +1219,9 @@ def handle_guitar(content, part_name):
             counter = 0        
             for notes_item in filter(lambda x: x.value == midi_note, l_gems):
                 if not ( all_o_expert[ notes_item.pos ] ):
-                    debug( "{} not found on Expert at {}".format( num_to_text[ midi_note ], format_location( notes_item.pos ) ) , True )
+                    debug( "{} not found on Expert at {}".format( num_to_text[ midi_note ], time_sig_map.tick_to_measure_str( notes_item.pos ) ) , True )
                 
-                    localTmpl[ output_part_var + "_general_issues"] += '<div class="row-fluid"><span class="span12"><strong class="">{}</strong> <span>{} not found on Expert</span> </span></div>'.format( format_location( notes_item.pos ), num_to_text[ midi_note ] )
+                    localTmpl[ output_part_var + "_general_issues"] += '<div class="row-fluid"><span class="span12"><strong class="">{}</strong> <span>{} not found on Expert</span> </span></div>'.format( time_sig_map.tick_to_measure_str( notes_item.pos ), num_to_text[ midi_note ] )
             if( counter < 1 and has_o):
                 debug( "ERROR: No {} gems not found, must use all nodes used in expert".format( num_to_text[ midi_note ] ) , True )
                 
@@ -1386,19 +1387,19 @@ def handle_vocals(content, part_name):
             l_gems.append(Note(decval, noteloc))
             debug_extra(
                 "Starts with 9: Midi # {}, MBT {}, Type {} ".format(str(decval), str(noteloc), str(midi_parts[2])))
-            debug("{} at {}".format(num_to_text[decval], format_location(noteloc)), True)
+            debug("{} at {}".format(num_to_text[decval], time_sig_map.tick_to_measure_str(noteloc)), True)
         elif midi_parts[0].lower() == 'e' and re.search("^8", midi_parts[2]):
             r_gems.append(Note(decval, noteloc))
             c.append(noteloc)
             debug_extra(
                 "Starts with 8: Midi # {}, MBT {}, Type {} ".format(str(decval), str(noteloc), str(midi_parts[2])))
-            debug("{} at {}".format(num_to_text[decval], format_location(noteloc)), True)
+            debug("{} at {}".format(num_to_text[decval], time_sig_map.tick_to_measure_str(noteloc)), True)
         else:
             p_gems.append(Note(decval, noteloc))
             debug_extra("Text Event: Midi # {}, MBT {}, Type {}, Extra {} ".format(str(decval), str(noteloc),
                                                                                    str(midi_parts[1]),
                                                                                    str(midi_parts[2])))
-            debug("Text Event found at {}".format(format_location(noteloc)), True)
+            debug("Text Event found at {}".format(time_sig_map.tick_to_measure_str(noteloc)), True)
 
     lyric_positions = Counter()
     for index, item in enumerate(all_l_notes):
@@ -1406,7 +1407,7 @@ def handle_vocals(content, part_name):
             break
         debug_extra("Index {}: Encoded: {} || Decoded: {} at {} ( {} )".format(index, item,
                                                                                decode_base64_to_str('/' + item)[2:],
-                                                                               format_location(p_gems[index].pos),
+                                                                               time_sig_map.tick_to_measure_str(p_gems[index].pos),
                                                                                p_gems[index].pos), True)
         lyric_positions[p_gems[index].pos] = decode_base64_to_str('/' + item)
 
@@ -1440,7 +1441,7 @@ def handle_vocals(content, part_name):
             if part_name == "HARM2":
                 global_harm2_phase_start.append(notes_item.pos)
             debug_extra(
-                "Found {} at {} - ( {}, {} )".format(num_to_text[notes_item.value], format_location(notes_item.pos),
+                "Found {} at {} - ( {}, {} )".format(num_to_text[notes_item.value], time_sig_map.tick_to_measure_str(notes_item.pos),
                                                      notes_item.value, notes_item.pos), True)
 
             # End notes
@@ -1462,7 +1463,7 @@ def handle_vocals(content, part_name):
             if (part_name == "HARM2"):
                 global_harm2_phase_end.append(notes_item.pos)
             debug_extra(
-                "Found {} at {} - ( {}, {} )".format(num_to_text[notes_item.value], format_location(notes_item.pos),
+                "Found {} at {} - ( {}, {} )".format(num_to_text[notes_item.value], time_sig_map.tick_to_measure_str(notes_item.pos),
                                                      notes_item.value, notes_item.pos), True)
 
     # If you authored phrases for Tug of War, we want make sure they are equal.
@@ -1506,8 +1507,8 @@ def handle_vocals(content, part_name):
         check_caps = False
         full_phrase = ''
         output_full_phrase = ''
-        debug_extra("Phrase Marker #{} starts at {} ends at {} - [ {},{} ]".format(index + 1, format_location(item),
-                                                                                   format_location(phrase_end[index]),
+        debug_extra("Phrase Marker #{} starts at {} ends at {} - [ {},{} ]".format(index + 1, time_sig_map.tick_to_measure_str(item),
+                                                                                   time_sig_map.tick_to_measure_str(phrase_end[index]),
                                                                                    item, phrase_end[index]), True)
         for od_midi_note in [x for x in p_gems if item <= x.pos <= phrase_end[index]]:
 
@@ -1552,7 +1553,7 @@ def handle_vocals(content, part_name):
                     for character in output_syllable:
                         if ord(character) > 255:
                             debug("ERROR: Non-Latin-1 character in syllable {} at {}".format(syllable.strip(),
-                                                                                             format_location(
+                                                                                             time_sig_map.tick_to_measure_str(
                                                                                                  od_midi_note.pos)),
                                   True)
                             output_syllable = '<span class="alert-error" title="Found Non-ASCII character ' + str(
@@ -1564,7 +1565,7 @@ def handle_vocals(content, part_name):
                         if syllable.find(special_char) != -1:
                             debug("ERROR: Found {} in syllable {} at {}".format(special_characters_error[index_char],
                                                                                 syllable.strip(),
-                                                                                format_location(od_midi_note.pos)),
+                                                                                time_sig_map.tick_to_measure_str(od_midi_note.pos)),
                                   True)
                             output_syllable = '<span class="alert-error" title="Found {} in syllable"><strong>{}</strong></span> '.format(
                                 special_characters_error[index_char], syllable.strip())
@@ -1575,7 +1576,7 @@ def handle_vocals(content, part_name):
                         if syllable.find(special_char) != -1:
                             debug("WARNING: Found {} in syllable {} at {}".format(warning_characters_error[index_char],
                                                                                   syllable.strip(),
-                                                                                  format_location(od_midi_note.pos)),
+                                                                                  time_sig_map.tick_to_measure_str(od_midi_note.pos)),
                                   True)
                             output_syllable = '<span class="alert-error" title="{} in syllable"><strong>{}</strong></span> '.format(
                                 warning_characters_error[index_char], syllable.strip())
@@ -1594,7 +1595,7 @@ def handle_vocals(content, part_name):
                         if not syllable[_index].isupper() and syllable[_index].isalpha():
                             check_caps = False
                             debug("ERROR: syllable \"{}\" should be uppercase at {} - [{}, {}]".format(syllable,
-                                                                                                       format_location(
+                                                                                                       time_sig_map.tick_to_measure_str(
                                                                                                            od_midi_note.pos),
                                                                                                        item,
                                                                                                        od_midi_note.pos),
@@ -1617,7 +1618,7 @@ def handle_vocals(content, part_name):
                             # Is the syllable uppercase? This is not valid!
                             if syllable[_index].isupper() and syllable[_index].isalpha():
                                 debug("ERROR: syllable \"{}\" should not be uppercase at {} - [{}, {}]".format(syllable,
-                                                                                                               format_location(
+                                                                                                               time_sig_map.tick_to_measure_str(
                                                                                                                    od_midi_note.pos),
                                                                                                                item,
                                                                                                                od_midi_note.pos),
@@ -1641,12 +1642,12 @@ def handle_vocals(content, part_name):
                 last_note = item
 
         # Print full phrase
-        debug("INFO: Phrase #{} from {} to {}: {}".format(index + 1, format_location(item),
-                                                          format_location(phrase_end[index]),
+        debug("INFO: Phrase #{} from {} to {}: {}".format(index + 1, time_sig_map.tick_to_measure_str(item),
+                                                          time_sig_map.tick_to_measure_str(phrase_end[index]),
                                                           re.sub(r'\s+', ' ', full_phrase)), True)
         localTmpl[
             output_part_var + "_phrases"] += '<div class="row-fluid"><strong class="">{}</strong>: {} </div>'.format(
-            format_location(item), output_full_phrase)
+            time_sig_map.tick_to_measure_str(item), output_full_phrase)
     debug("=================== ENDS " + part_name + ": Phrase markers and lyrics ===================", True)
 
     # Get all ODs
@@ -1657,18 +1658,18 @@ def handle_vocals(content, part_name):
     # Start notes
     for notes_item in [x for x in l_gems if x.value == 116]:
         od_start.append(notes_item.pos)
-        debug_extra("Found {} at {} - ( {}, {} )".format(num_to_text[notes_item.value], format_location(notes_item.pos),
+        debug_extra("Found {} at {} - ( {}, {} )".format(num_to_text[notes_item.value], time_sig_map.tick_to_measure_str(notes_item.pos),
                                                          notes_item.value, notes_item.pos), True)
         # End notes
     for notes_item in [x for x in r_gems if x.value == 116]:
         od_end.append(notes_item.pos)
-        debug_extra("Found {} at {} - ( {}, {} )".format(num_to_text[notes_item.value], format_location(notes_item.pos),
+        debug_extra("Found {} at {} - ( {}, {} )".format(num_to_text[notes_item.value], time_sig_map.tick_to_measure_str(notes_item.pos),
                                                          notes_item.value, notes_item.pos), True)
         # For od marker we do ....
     for index, item in enumerate(od_start):
         # Print
-        debug("INFO: Overdrive #{} from {} to {}".format(index + 1, format_location(item),
-                                                         format_location(od_end[index])), True)
+        debug("INFO: Overdrive #{} from {} to {}".format(index + 1, time_sig_map.tick_to_measure_str(item),
+                                                         time_sig_map.tick_to_measure_str(od_end[index])), True)
     debug("=================== ENDS " + part_name + ": ODs ===================", True)
 
     # Get notes without space
@@ -1679,11 +1680,11 @@ def handle_vocals(content, part_name):
         for notes_item_2 in [x for x in r_gems if x.pos == notes_item.pos]:
             if notes_item_2.value != 105 and notes_item_2.value != 106 and notes_item_2.value != 116:
                 debug("ERROR: Note {} starting at {} needs at least 2 64ths note gap between notes".format(
-                    num_to_text[notes_item_2.value], format_location(notes_item_2.pos)), True)
+                    num_to_text[notes_item_2.value], time_sig_map.tick_to_measure_str(notes_item_2.pos)), True)
 
                 localTmpl[
                     output_part_var + "_general_issues"] += '<div class="row-fluid"><span class="span12"><strong class="">{}</strong> <span>Note {} needs at least a 1/32nd gap between notes</span> </span></div>'.format(
-                    format_location(notes_item_2.pos), num_to_text[notes_item_2.value])
+                    time_sig_map.tick_to_measure_str(notes_item_2.pos), num_to_text[notes_item_2.value])
 
                 has_error = True
 
@@ -1781,17 +1782,17 @@ def handle_keys(content, part_name):
             l_gems.append(Note(decval, noteloc))
             debug_extra(
                 "Starts with 9: Midi # {}, MBT {}, Type {} ".format(str(decval), str(noteloc), str(midi_parts[2])))
-            debug_extra("{} at {}".format(num_to_text[decval], format_location(noteloc)), True)
+            debug_extra("{} at {}".format(num_to_text[decval], time_sig_map.tick_to_measure_str(noteloc)), True)
         elif midi_parts[0].lower() == 'e' and re.search("^8", midi_parts[2]):
             r_gems.append(Note(decval, noteloc))
             debug_extra(
                 "Starts with 8: Midi # {}, MBT {}, Type {} ".format(str(decval), str(noteloc), str(midi_parts[2])))
-            debug_extra("{} at {}".format(num_to_text[decval], format_location(noteloc)), True)
+            debug_extra("{} at {}".format(num_to_text[decval], time_sig_map.tick_to_measure_str(noteloc)), True)
         else:
             debug_extra("Text Event: Midi # {}, MBT {}, Type {}, Extra {} ".format(str(decval), str(noteloc),
                                                                                    str(midi_parts[1]),
                                                                                    str(midi_parts[2])))
-            debug_extra("{} at {}".format("None", format_location(noteloc)), True)
+            debug_extra("{} at {}".format("None", time_sig_map.tick_to_measure_str(noteloc)), True)
             debug_extra("")
 
     # Get all valid number of chords per track
@@ -1810,7 +1811,7 @@ def handle_keys(content, part_name):
         gems_in_chord = Counter()
         for notes_item in [x for x in l_gems if x.value >= item_note[0] and x.value <= item_note[1]]:
             debug_extra(
-                "Found {} at {} - ( {}, {}): ".format(num_to_text[notes_item.value], format_location(notes_item.pos),
+                "Found {} at {} - ( {}, {}): ".format(num_to_text[notes_item.value], time_sig_map.tick_to_measure_str(notes_item.pos),
                                                       notes_item.value, notes_item.pos), True)
             counter_global[(notes_item.pos)] += 1
             gems_in_chord[(notes_item.pos, notes_item.value)] += 1
@@ -1821,11 +1822,11 @@ def handle_keys(content, part_name):
                 gems_text = ''
                 for x, v in [x_y for x_y in list(gems_in_chord.keys()) if x_y[0] == b]:
                     gems_text = gems_text + num_to_text[v] + " + "
-                debug("ERROR: Found {} chord at {} - ( {} )".format(gems_text[:-3], format_location(b), b), True)
+                debug("ERROR: Found {} chord at {} - ( {} )".format(gems_text[:-3], time_sig_map.tick_to_measure_str(b), b), True)
 
                 localTmpl[midi_notes_output_var[
                     idx_notes]] += '<div class="row-fluid"><span class="span12"><strong class="">{}</strong> <span>{} chord not allowed</span> </span></div>'.format(
-                    format_location(b), gems_text[:-3])
+                    time_sig_map.tick_to_measure_str(b), gems_text[:-3])
                 has_error = True
         counter_chord_easy = [x_y2 for x_y2 in iter(counter_global.items()) if x_y2[1] >= 2]
         debug("=================== ENDS " + midi_notes_text[idx_notes] + " KEYS: " + str(
@@ -1842,13 +1843,13 @@ def handle_keys(content, part_name):
     for notes_item in [x for x in l_gems if x.value == 103]:
         solo_start.append(notes_item.pos)
         debug_extra(
-            "Found start {} at {} - ( {}, {} )".format(num_to_text[notes_item.value], format_location(notes_item.pos),
+            "Found start {} at {} - ( {}, {} )".format(num_to_text[notes_item.value], time_sig_map.tick_to_measure_str(notes_item.pos),
                                                        notes_item.value, notes_item.pos), True)
         # End notes
     for notes_item in [x for x in r_gems if x.value == 103]:
         solo_end.append(notes_item.pos)
         debug_extra(
-            "Found end {} at {} - ( {}, {} )".format(num_to_text[notes_item.value], format_location(notes_item.pos),
+            "Found end {} at {} - ( {}, {} )".format(num_to_text[notes_item.value], time_sig_map.tick_to_measure_str(notes_item.pos),
                                                      notes_item.value, notes_item.pos), True)
     # Check for any gem under solo marker... we need at least one gem for the solo to be valid
     # for midi_check in [60,61,62,63,64,72,73,74,75,76,84,85,86,87,88,96,97,98,99,100]:
@@ -1867,8 +1868,8 @@ def handle_keys(content, part_name):
             counter[item] += 1
             gems_text += 'Expert + '
 
-        debug("INFO: Solo Marker #{} starts at {} ends at {} - [ {},{} ]".format(index + 1, format_location(item),
-                                                                                 format_location(solo_end[index]), item,
+        debug("INFO: Solo Marker #{} starts at {} ends at {} - [ {},{} ]".format(index + 1, time_sig_map.tick_to_measure_str(item),
+                                                                                 time_sig_map.tick_to_measure_str(solo_end[index]), item,
                                                                                  solo_end[index]), True)
 
         if (counter[item] < 4):
@@ -1876,7 +1877,7 @@ def handle_keys(content, part_name):
                 index + 1, gems_text[:-3]), True)
             localTmpl[
                 "keys_general_issues"] += '<div class="row-fluid"><span class="span12"><strong class="">{}</strong> <span>Gems are missing in solo marker #{} on at least one difficulty; only found {} gems</span> </span></div>'.format(
-                format_location(item), index + 1, gems_text[:-3])
+                time_sig_map.tick_to_measure_str(item), index + 1, gems_text[:-3])
             has_error = True
     debug("=================== ENDS GENERAL KEYS: No gems under solo marker ===================", True)
     '''
@@ -1911,9 +1912,9 @@ def handle_keys(content, part_name):
             for notes_item in filter(lambda x: x.value == midi_note, l_gems):
                 counter += 1
                 if not ( all_g_expert[ notes_item.pos ] ):
-                    debug( "ERROR: {} not found on Expert at {}".format( num_to_text[ midi_note ], format_location( notes_item.pos ) ) , True )
+                    debug( "ERROR: {} not found on Expert at {}".format( num_to_text[ midi_note ], time_sig_map.tick_to_measure_str( notes_item.pos ) ) , True )
                 
-                    localTmpl[ "keys_gems_not_found" ] += '<div class="row-fluid"><span class="span12"><strong class="">{}</strong> <span>{} not found on Expert</span> </span></div>'.format( format_location( notes_item.pos ), num_to_text[ midi_note ] ) 
+                    localTmpl[ "keys_gems_not_found" ] += '<div class="row-fluid"><span class="span12"><strong class="">{}</strong> <span>{} not found on Expert</span> </span></div>'.format( time_sig_map.tick_to_measure_str( notes_item.pos ), num_to_text[ midi_note ] ) 
                     has_error = True
             if( counter < 1 and has_g):
                 debug( "ERROR: No {} gems not found, must use all nodes used in expert".format( num_to_text[ midi_note ] ) , True )
@@ -1925,9 +1926,9 @@ def handle_keys(content, part_name):
             counter = 0        
             for notes_item in filter(lambda x: x.value == midi_note, l_gems):
                 if not ( all_r_expert[ notes_item.pos ] ):
-                    debug( "{} not found on Expert at {}".format( num_to_text[ midi_note ], format_location( notes_item.pos ) ) , True )
+                    debug( "{} not found on Expert at {}".format( num_to_text[ midi_note ], time_sig_map.tick_to_measure_str( notes_item.pos ) ) , True )
                 
-                    localTmpl[ "keys_gems_not_found" ] += '<div class="row-fluid"><span class="span12"><strong class="">{}</strong> <span>{} not found on Expert</span> </span></div>'.format( format_location( notes_item.pos ), num_to_text[ midi_note ] )
+                    localTmpl[ "keys_gems_not_found" ] += '<div class="row-fluid"><span class="span12"><strong class="">{}</strong> <span>{} not found on Expert</span> </span></div>'.format( time_sig_map.tick_to_measure_str( notes_item.pos ), num_to_text[ midi_note ] )
             if( counter < 1 and has_r):
                 debug( "ERROR: No {} gems not found, must use all nodes used in expert".format( num_to_text[ midi_note ] ) , True )
                 
@@ -1938,9 +1939,9 @@ def handle_keys(content, part_name):
             counter = 0        
             for notes_item in filter(lambda x: x.value == midi_note, l_gems):
                 if not ( all_y_expert[ notes_item.pos ] ):
-                    debug( "{} not found on Expert at {}".format( num_to_text[ midi_note ], format_location( notes_item.pos ) ) , True )
+                    debug( "{} not found on Expert at {}".format( num_to_text[ midi_note ], time_sig_map.tick_to_measure_str( notes_item.pos ) ) , True )
                 
-                    localTmpl[ "keys_gems_not_found" ] += '<div class="row-fluid"><span class="span12"><strong class="">{}</strong> <span>{} not found on Expert</span> </span></div>'.format( format_location( notes_item.pos ), num_to_text[ midi_note ] )
+                    localTmpl[ "keys_gems_not_found" ] += '<div class="row-fluid"><span class="span12"><strong class="">{}</strong> <span>{} not found on Expert</span> </span></div>'.format( time_sig_map.tick_to_measure_str( notes_item.pos ), num_to_text[ midi_note ] )
             if( counter < 1 and has_y):
                 debug( "ERROR: No {} gems not found, must use all nodes used in expert".format( num_to_text[ midi_note ] ) , True )
                 
@@ -1951,9 +1952,9 @@ def handle_keys(content, part_name):
             counter = 0        
             for notes_item in filter(lambda x: x.value == midi_note, l_gems):
                 if not ( all_b_expert[ notes_item.pos ] ):
-                    debug( "{} not found on Expert at {}".format( num_to_text[ midi_note ], format_location( notes_item.pos ) ) , True )
+                    debug( "{} not found on Expert at {}".format( num_to_text[ midi_note ], time_sig_map.tick_to_measure_str( notes_item.pos ) ) , True )
                 
-                    localTmpl[    "keys_gems_not_found" ] += '<div class="row-fluid"><span class="span12"><strong class="">{}</strong> <span>{} not found on Expert</span> </span></div>'.format( format_location( notes_item.pos ), num_to_text[ midi_note ] )
+                    localTmpl[    "keys_gems_not_found" ] += '<div class="row-fluid"><span class="span12"><strong class="">{}</strong> <span>{} not found on Expert</span> </span></div>'.format( time_sig_map.tick_to_measure_str( notes_item.pos ), num_to_text[ midi_note ] )
             if( counter < 1 and has_b):
                 debug( "ERROR: No {} gems not found, must use all nodes used in expert".format( num_to_text[ midi_note ] ) , True )
                 
@@ -1964,9 +1965,9 @@ def handle_keys(content, part_name):
             counter = 0        
             for notes_item in filter(lambda x: x.value == midi_note, l_gems):
                 if not ( all_o_expert[ notes_item.pos ] ):
-                    debug( "{} not found on Expert at {}".format( num_to_text[ midi_note ], format_location( notes_item.pos ) ) , True )
+                    debug( "{} not found on Expert at {}".format( num_to_text[ midi_note ], time_sig_map.tick_to_measure_str( notes_item.pos ) ) , True )
                 
-                    localTmpl[    "keys_gems_not_found" ] += '<div class="row-fluid"><span class="span12"><strong class="">{}</strong> <span>{} not found on Expert</span> </span></div>'.format( format_location( notes_item.pos ), num_to_text[ midi_note ] )
+                    localTmpl[    "keys_gems_not_found" ] += '<div class="row-fluid"><span class="span12"><strong class="">{}</strong> <span>{} not found on Expert</span> </span></div>'.format( time_sig_map.tick_to_measure_str( notes_item.pos ), num_to_text[ midi_note ] )
             if( counter < 1 and has_o):
                 debug( "ERROR: No {} gems not found, must use all nodes used in expert".format( num_to_text[ midi_note ] ) , True )
                 
@@ -2129,7 +2130,7 @@ def handle_pro_keys(content, part_name):
                         debug("More than one Range Marker found on " + dif_name, True)
                         localTmpl[
                             output_part_var + "_lane_shift_issues"] += '<div class="row-fluid"><span class="span12"><strong class="">{}</strong> <span>{} difficulty: Lane Shifts are not allowed on this difficulty.</span> </span></div>'.format(
-                            format_location(noteloc), dif_name)
+                            time_sig_map.tick_to_measure_str(noteloc), dif_name)
                         has_error = True
                         pass
 
@@ -2143,7 +2144,7 @@ def handle_pro_keys(content, part_name):
                 if decval < note_range_start[current_range] or decval > (note_range_start[current_range] + 16):
                     localTmpl[
                         output_part_var + "_range_issues"] += '<div class="row-fluid"><span class="span12"><strong class="">{}</strong> <span>{} difficulty: Note {} not in {}</span> </span></div>'.format(
-                        format_location(noteloc), dif_name, num_to_text[decval], num_to_text[current_range])
+                        time_sig_map.tick_to_measure_str(noteloc), dif_name, num_to_text[decval], num_to_text[current_range])
                     has_error = True
                     pass
 
@@ -2165,17 +2166,17 @@ def handle_pro_keys(content, part_name):
 
             debug_extra(
                 "Starts with 9: Midi # {}, MBT {}, Type {} ".format(str(decval), str(noteloc), str(midi_parts[2])))
-            # debug_extra( "{} at {}".format( num_to_text[decval], format_location( noteloc ) ), True )
+            # debug_extra( "{} at {}".format( num_to_text[decval], time_sig_map.tick_to_measure_str( noteloc ) ), True )
         elif midi_parts[0].lower() == 'e' and re.search("^8", midi_parts[2]):
             r_gems.append(Note(decval, noteloc))
             debug_extra(
                 "Starts with 8: Midi # {}, MBT {}, Type {} ".format(str(decval), str(noteloc), str(midi_parts[2])))
-            # debug_extra( "{} at {}".format( num_to_text[decval], format_location( noteloc ) ), True )
+            # debug_extra( "{} at {}".format( num_to_text[decval], time_sig_map.tick_to_measure_str( noteloc ) ), True )
         else:
             debug_extra("Text Event: Midi # {}, MBT {}, Type {}, Extra {} ".format(str(decval), str(noteloc),
                                                                                    str(midi_parts[1]),
                                                                                    str(midi_parts[2])))
-            debug_extra("{} at {}".format("None", format_location(noteloc)), True)
+            debug_extra("{} at {}".format("None", time_sig_map.tick_to_measure_str(noteloc)), True)
             debug_extra("")
             pass
 
@@ -2187,14 +2188,14 @@ def handle_pro_keys(content, part_name):
     debug("Will validate with {} max notes".format(max_notes), True)
     for position, value in c.items():
 
-        debug("{} notes found at {}".format(value, format_location(position)), True)
+        debug("{} notes found at {}".format(value, time_sig_map.tick_to_measure_str(position)), True)
 
         # Chord max note checking
         if value > max_notes:
             debug("Found chord with {} notes".format(value), True)
             localTmpl[
                 output_part_var + "_general_issues"] += '<div class="row-fluid"><span class="span12"><strong class="">{}</strong> <span>{} difficulty: Found chord with {} or more notes</span> </span></div>'.format(
-                format_location(position), dif_name, max_notes + 1)
+                time_sig_map.tick_to_measure_str(position), dif_name, max_notes + 1)
             has_error = True
             pass
 
@@ -2203,7 +2204,7 @@ def handle_pro_keys(content, part_name):
             if chord_notes[position]["highest"] - chord_notes[position]["lowest"] > (max_span):
                 localTmpl[
                     output_part_var + "_general_issues"] += '<div class="row-fluid"><span class="span12"><strong class="">{}</strong> <span>{} difficulty: Found chord spanning more than {} notes</span> </span></div>'.format(
-                    format_location(position), dif_name, max_span)
+                    time_sig_map.tick_to_measure_str(position), dif_name, max_span)
                 has_error = True
                 pass
             pass
@@ -2221,11 +2222,11 @@ def handle_pro_keys(content, part_name):
         #Start notes
         for notes_item in filter(lambda x: x.value == 103 , l_gems):
             solo_start.append( notes_item.pos )
-            debug_extra( "Found start {} at {} - ( {}, {} )".format( num_to_text[ notes_item.value ], format_location( notes_item.pos ),notes_item.value, notes_item.pos ), True ) 
+            debug_extra( "Found start {} at {} - ( {}, {} )".format( num_to_text[ notes_item.value ], time_sig_map.tick_to_measure_str( notes_item.pos ),notes_item.value, notes_item.pos ), True ) 
         #End notes
         for notes_item in filter(lambda x: x.value == 103 , r_gems):
             solo_end.append( notes_item.pos )            
-            debug_extra( "Found end {} at {} - ( {}, {} )".format( num_to_text[ notes_item.value ], format_location( notes_item.pos ),notes_item.value, notes_item.pos ), True )        
+            debug_extra( "Found end {} at {} - ( {}, {} )".format( num_to_text[ notes_item.value ], time_sig_map.tick_to_measure_str( notes_item.pos ),notes_item.value, notes_item.pos ), True )        
         #Check for any gem under solo marker... we need at least one gem for the solo to be valid
         #for midi_check in [60,61,62,63,64,72,73,74,75,76,84,85,86,87,88,96,97,98,99,100]:            
         for index, item in enumerate(solo_start):
@@ -2243,11 +2244,11 @@ def handle_pro_keys(content, part_name):
                 counter[ item ] += 1
                 gems_text += 'Expert + '
             
-            debug( "INFO: Solo Marker #{} starts at {} ends at {} - [ {},{} ]".format( index+1, format_location( item ), format_location( solo_end[index] ), item, solo_end[index] ) ,True )
+            debug( "INFO: Solo Marker #{} starts at {} ends at {} - [ {},{} ]".format( index+1, time_sig_map.tick_to_measure_str( item ), time_sig_map.tick_to_measure_str( solo_end[index] ), item, solo_end[index] ) ,True )
             
             if( counter[ item ] < 4 ):
                 debug( "ERROR: Gems are missing in solo marker #{} on at least one difficulty; only found {} gems".format( index+1, gems_text[:-3] ) ,True )                
-                localTmpl[ "keys_general_issues"] += '<div class="row-fluid"><span class="span12"><strong class="">{}</strong> <span>Gems are missing in solo marker #{} on at least one difficulty; only found {} gems</span> </span></div>'.format( format_location( item ), index+1, gems_text[:-3] )
+                localTmpl[ "keys_general_issues"] += '<div class="row-fluid"><span class="span12"><strong class="">{}</strong> <span>Gems are missing in solo marker #{} on at least one difficulty; only found {} gems</span> </span></div>'.format( time_sig_map.tick_to_measure_str( item ), index+1, gems_text[:-3] )
                 has_error = True
         debug( "=================== ENDS GENERAL KEYS: No gems under solo marker ===================", True )
         
@@ -2346,18 +2347,18 @@ def handle_events(content, part_name):
         if midi_parts[0].lower() == 'e' and re.search("^9", midi_parts[2]):
             debug_extra(
                 "Starts with 9: Midi # {}, MBT {}, Type {} ".format(str(decval), str(noteloc), str(midi_parts[2])))
-            debug("{} at {}".format(decval, format_location(noteloc)), True)
+            debug("{} at {}".format(decval, time_sig_map.tick_to_measure_str(noteloc)), True)
         elif midi_parts[0].lower() == 'e' and re.search("^8", midi_parts[2]):
             c.append(noteloc)
             debug_extra(
                 "Starts with 8: Midi # {}, MBT {}, Type {} ".format(str(decval), str(noteloc), str(midi_parts[2])))
-            debug("{} at {}".format(decval, format_location(noteloc)), True)
+            debug("{} at {}".format(decval, time_sig_map.tick_to_measure_str(noteloc)), True)
         else:
             p_gems.append(Note(decval, noteloc))
             debug_extra("Text Event: Midi # {}, MBT {}, Type {}, Extra {} ".format(str(decval), str(noteloc),
                                                                                    str(midi_parts[1]),
                                                                                    str(midi_parts[2])))
-            debug("Text Event found at {}".format(format_location(noteloc)), True)
+            debug("Text Event found at {}".format(time_sig_map.tick_to_measure_str(noteloc)), True)
     # TO DO: Improve this with a regex?
     non_practice_sections = ['EVENTS', '[crowd_intense]', '[crowd_normal]', '[crowd_mellow]', '[crowd_noclap]',
                              '[music_start]', '[music_end]', '[end]', '[crowd_clap]', '[crowd_realtime]']
@@ -2370,7 +2371,7 @@ def handle_events(content, part_name):
     for index, item in enumerate(all_l_notes):
         text_decode = decode_base64_to_str('/' + item).strip()
         debug_extra("Index {}: Encoded: {} || Decoded: {} at {} ( {} )".format(index, item, text_decode,
-                                                                               format_location(p_gems[index].pos),
+                                                                               time_sig_map.tick_to_measure_str(p_gems[index].pos),
                                                                                p_gems[index].pos), True)
         # Remove NON PRACTICE section events
         if text_decode not in non_practice_sections:
@@ -2402,7 +2403,7 @@ def handle_events(content, part_name):
             repeated_section[text_decode] += 1
             localTmpl[
                 "events_list"] += '<div class="row-fluid"><span class="span12"><strong class="">{}</strong> <span class="{}">{}</span> {} {}</span></div>'.format(
-                format_location(p_gems[index].pos), class_name, text_decode, error_icon, error_text)
+                time_sig_map.tick_to_measure_str(p_gems[index].pos), class_name, text_decode, error_icon, error_text)
     sect_ends.append(text_decode)
     sect_ends_pos.append(p_gems[index].pos)
     if (has_error):
@@ -2410,44 +2411,18 @@ def handle_events(content, part_name):
 
     #
     for index, item in enumerate(sect_start):
-        debug_extra("Practice section {} goes from {} to {} at {} - [{},{}]".format(item, format_location(
-            sect_start_pos[index]), sect_ends[index], format_location(sect_ends_pos[index]), sect_start_pos[index],
+        debug_extra("Practice section {} goes from {} to {} at {} - [{},{}]".format(item, time_sig_map.tick_to_measure_str(
+            sect_start_pos[index]), sect_ends[index], time_sig_map.tick_to_measure_str(sect_ends_pos[index]), sect_start_pos[index],
                                                                                     sect_ends_pos[index]), True)
 
     localTmpl['first_event'] = 0
     localTmpl['last_event'] = 0
 
     if len(sect_start_pos) > 0:
-        localTmpl['first_event'] = format_location(sect_start_pos[0])
+        localTmpl['first_event'] = time_sig_map.tick_to_measure_str(sect_start_pos[0])
         localTmpl['last_event'] = int((sect_ends_pos.pop() / 1920) + 1)
 
     return localTmpl
-
-
-def format_location(note_location):
-    _location_amount = len(project_time_signature_location)
-    _ppq = 480
-
-    for _test in range(_location_amount):
-
-        _location_index = (_location_amount - 1) - _test
-
-        if note_location >= project_time_signature_location[_location_index]:
-            _location_base = project_time_signature_location[_location_index]
-            _location_offset = note_location - _location_base
-
-            _location_num = project_time_signature_location_num[_location_index]
-            _location_denom = project_time_signature_location_denom[_location_index]
-
-            _divisor_factor = (_location_denom / 4)
-            _divisor = (_ppq / _divisor_factor) * _location_num
-
-            _time_1 = (_location_offset / _divisor) + project_time_signature_location_measure[_location_index]
-            _time_2 = (_location_offset % _divisor) / (_ppq / (_location_denom / 4))
-
-            return str(int(_time_1 + 1)) + '.' + str(int(_time_2 + 1))
-
-    return "Error.Error"
 
 
 # [resto de las funciones]
@@ -2497,7 +2472,6 @@ file_name = ""
 file_name_split = ""
 rpr_enum = RPR_EnumProjects(-1, "", 512)
 num_media_items = RPR_CountMediaItems(0)
-media_item = 0
 
 if rpr_enum[2] != "":
     file_name_split = rpr_enum[2].split('\\')
@@ -2511,39 +2485,28 @@ if rpr_enum[2] != "":
 track_content = ""
 maxlen = 1048576  # max num of chars to return
 
-project_bpm = 120
 project_ppq = 480
 
-project_time_signature_count = 0
-project_time_signature_num = 4
-project_time_signature_denom = 4
 
 # Get the beginning of the song's time signature and BPM.
-(_, _, project_time_signature_num, project_time_signature_denom, project_bpm) = RPR_TimeMap_GetTimeSigAtTime(0, 0,0, 0, 0)
+_, _, project_time_signature_num, project_time_signature_denom, project_bpm = RPR_TimeMap_GetTimeSigAtTime(0, 0,0, 0, 0)
 
-project_time_signature_location = [0]
-project_time_signature_location_measure = [0]
-project_time_signature_location_num = [project_time_signature_num]
-project_time_signature_location_denom = [project_time_signature_denom]
+time_sig_map = TimeSignatureMap()
+time_sig_map.add_time_signature(0, 0, TimeSignature(project_time_signature_num, project_time_signature_denom))
 
-project_time_signature_location_time = 0
-
-project_time_signature_next_time = RPR_TimeMap2_GetNextChangeTime(0, project_time_signature_location_time)
+project_time_signature_next_time = RPR_TimeMap2_GetNextChangeTime(0, 0)
 
 while project_time_signature_next_time != -1:
 
-    project_time_signature_count += 1
     project_time_signature_location_time = project_time_signature_next_time
 
-    (
-        _, _, _project_time_signature_num, _project_time_signature_denom, project_bpm) = RPR_TimeMap_GetTimeSigAtTime(
-        0, project_time_signature_location_time, 0, 0, 0)
+    _, _, _project_time_signature_num, _project_time_signature_denom, project_bpm = RPR_TimeMap_GetTimeSigAtTime(0, project_time_signature_location_time, 0, 0, 0)
 
     # Convert the time we are at to ticks for the note locations.
     _QN = RPR_TimeMap_timeToQN(project_time_signature_location_time)
     _ticks = int(_QN * project_ppq)
 
-    (_, _, _, _measureposOut, _, _, _) = RPR_TimeMap2_timeToBeats(0, project_time_signature_location_time, 0, 0, 0, 0)
+    _, _, _, _measureposOut, _, _, _ = RPR_TimeMap2_timeToBeats(0, project_time_signature_location_time, 0, 0, 0, 0)
 
     # Check to see if the time signature actually changed
     if _project_time_signature_num != project_time_signature_num or _project_time_signature_denom != project_time_signature_denom:
@@ -2551,13 +2514,11 @@ while project_time_signature_next_time != -1:
         project_time_signature_denom = _project_time_signature_denom
 
         # Add our results to the list.
-        project_time_signature_location.append(_ticks)
-        project_time_signature_location_measure.append(_measureposOut)
-        project_time_signature_location_num.append(project_time_signature_num)
-        project_time_signature_location_denom.append(project_time_signature_denom)
+        time_sig_map.add_time_signature(_ticks, _measureposOut, TimeSignature(project_time_signature_num, project_time_signature_denom))
 
     # Get the next change.
     project_time_signature_next_time = RPR_TimeMap2_GetNextChangeTime(0, project_time_signature_location_time)
+
 
 with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:
     for media_item in range(0, num_media_items):
