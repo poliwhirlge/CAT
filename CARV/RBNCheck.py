@@ -109,6 +109,7 @@ from collections import Counter
 from configparser import ConfigParser
 from reaper_python import *
 from reaper_python import RPR_ShowConsoleMsg as console_msg
+from render_html import write_html_output
 import importlib
 import codecs
 
@@ -138,7 +139,6 @@ class Note(object):
 # (end) Class Notes
 
 # (start) Template Dictionary
-dTmpl = {}
 global_harm2_phase_start = []
 global_harm2_phase_end = []
 
@@ -270,13 +270,14 @@ var_sets = [
     'keys_pos_od',
     'vocals_pos_od']
 
-for elem in var_sets:
-    dTmpl[elem] = ''
+dTmpl = {k: '' for k in var_sets}
+
 # (end) Template Dictionary
 
 # These variables control if we have a certain instrument or track
-has_drums, has_drums_2x, has_bass, has_guitar, has_rhythm, has_vocals, has_harm1, has_harm2, has_harm3, has_keys, has_prokeys = (
-    False, False, False, False, False, False, False, False, False, False, False)
+#has_drums, has_drums_2x, has_bass, has_guitar, has_rhythm, has_vocals, has_harm1, has_harm2, has_harm3, has_keys, has_prokeys = (
+#    False, False, False, False, False, False, False, False, False, False, False)
+available_tracks = set()
 
 
 def decode_base64_to_str(input):
@@ -737,11 +738,9 @@ def handle_drums(content, part_name):
 
     if len(all_notes) > 8:
         if part_name == "PART DRUMS":
-            global has_drums
-            has_drums = True
+            available_tracks.add('drums')
         else:
-            global has_drums_2x
-            has_drums_2x = True
+            available_tracks.add('drums_2x')
 
     phrases_p1 = 0
     phrases_p2 = 0
@@ -1268,18 +1267,15 @@ def handle_guitar(content, part_name):
     if part_name == "PART GUITAR":
         localTmpl["guitar_pos_od"] = guitar_pos_od
         if len(all_notes) > 4:
-            global has_guitar
-            has_guitar = True
+            available_tracks.add('guitar')
     elif part_name == "PART BASS":
         localTmpl["bass_pos_od"] = bass_pos_od
         if len(all_notes) > 4:
-            global has_bass
-            has_bass = True
+            available_tracks.add('bass')
     elif part_name == "PART RHYTHM":
         localTmpl["rhythm_pos_od"] = rhythm_pos_od
         if len(all_notes) > 4:
-            global has_rhythm
-            has_rhythm = True
+            available_tracks.add('rhythm')
 
     if has_error:
         localTmpl[output_part_var + '_error_icon'] = '<i class="icon-exclamation-sign"></i>'
@@ -1694,17 +1690,13 @@ def handle_vocals(content, part_name):
     debug("=================== ENDS " + part_name + ": Notes without space ===================", True)
     if len(all_notes) > 4:
         if part_name == "PART VOCALS":
-            global has_vocals
-            has_vocals = True
+            available_tracks.add('vocals')
         elif part_name == "HARM1":
-            global has_harm1
-            has_harm1 = True
+            available_tracks.add('harm1')
         elif part_name == "HARM2":
-            global has_harm2
-            has_harm2 = True
+            available_tracks.add('harm2')
         elif part_name == "HARM3":
-            global has_harm3
-            has_harm3 = True
+            available_tracks.add('harm3')
 
     # Save all variables in DICT for output
     localTmpl[output_part_var + "_od_start"] = od_start
@@ -1998,10 +1990,9 @@ def handle_keys(content, part_name):
     localTmpl["keys_pos_od"] = keys_pos_od
 
     if len(all_notes) > 4:
-        global has_keys
-        has_keys = True
+        available_tracks.add('keys')
 
-    if (has_error):
+    if has_error:
         localTmpl['keys_error_icon'] = '<i class="icon-exclamation-sign"></i>'
 
     return localTmpl
@@ -2274,13 +2265,12 @@ def handle_pro_keys(content, part_name):
     debug("=================== ENDS TOTAL PRO KEYS: Some numbers and stats ===================", True)
 
     if len(all_notes) > 4:
-        global has_prokeys
-        has_prokeys = True
+        available_tracks.add('prokeys')
 
     if part_name == "PART REAL_KEYS_X":
         localTmpl["prokeys_total_ods"] = total_ods
 
-    if (has_error):
+    if has_error:
         localTmpl['prokeys_error_icon'] = '<i class="icon-exclamation-sign"></i>'
 
     return localTmpl
@@ -2481,10 +2471,6 @@ def debug_extra(output_content, add_new_line=False):
             f.write("DEBUG: " + output_content)
 
 
-def debug_html(output_content, add_new_line=False):
-    f.write(output_content)
-
-
 # Map functions to handlers
 switch_map = {"PART DRUMS": handle_drums,
               "PART DRUMS_2X": handle_drums,
@@ -2633,619 +2619,7 @@ with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:
         track_content = ""
         media_item = media_item + 1
 
-with open(OUTPUT_HTML_FILE, 'w', encoding='utf-8') as f:
-    var_html = '''
-<!DOCTYPE html>
-<html lang="en">
-<HEAD>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
-    <!-- Le styles -->
-    <link href="css/bootstrap.min.css" rel="stylesheet">
-    <link href='http://fonts.googleapis.com/css?family=Open+Sans:400,300,700'
- rel='stylesheet' type='text/css'>
-    <style type="text/css">
-        body {
-            color: #333;
-            padding-bottom: 40px;
-        }
-        .sidebar-nav {
-            padding: 9px 0;
-        }
-    </style>
-    <!--<link href="css/bootstrap-responsive.css" rel="stylesheet">        -->
-    <link href="css/carv.css" rel="stylesheet">
-    <title>''' + page_title + '''</title>
-</HEAD>
-<body>
-    <div class="container-fluid">
-        <h3 style="color: white; padding-top:16px; padding-bottom:16px;">''' + file_name + '''</h3>
-        <ul class="nav nav-tabs" >'''
 
-    if has_drums:
-        var_html += '''<li class="active"><a href="#tab_drums" data-toggle="tab">Drums ''' + dTmpl[
-            'drums_error_icon'] + '''</a></li>'''
-    if has_drums_2x:
-        var_html += '''<li><a href="#tab_drums_2x" data-toggle="tab">Drums (2x) ''' + dTmpl[
-            'drums_2x_error_icon'] + '''</a></li>'''
-    if has_bass:
-        var_html += '''<li><a href="#tab_bass" data-toggle="tab">Bass ''' + dTmpl['bass_error_icon'] + '''</a></li>'''
-    if has_guitar:
-        var_html += '''<li><a href="#tab_guitar" data-toggle="tab">Guitar ''' + dTmpl[
-            'guitar_error_icon'] + '''</a></li>'''
-    if has_rhythm:
-        var_html += '''<li><a href="#tab_rhythm" data-toggle="tab">Rhythm ''' + dTmpl[
-            'rhythm_error_icon'] + '''</a></li>'''
-    if has_prokeys:
-        var_html += '''<li><a href="#tab_prokeys" data-toggle="tab">Pro Keys ''' + dTmpl[
-            'prokeys_error_icon'] + '''</a></li>'''
-    if has_keys:
-        var_html += '''<li><a href="#tab_keys" data-toggle="tab">Keys ''' + dTmpl['keys_error_icon'] + '''</a></li>'''
-    if has_vocals:
-        var_html += '''<li><a href="#tab_vocals" data-toggle="tab">Vocals ''' + dTmpl[
-            'vocals_error_icon'] + '''</a></li>'''
-    if has_harm1:
-        var_html += '''<li><a href="#tab_harm1" data-toggle="tab">Harmony 1 ''' + dTmpl[
-            'harm1_error_icon'] + '''</a></li>'''
-    if has_harm2:
-        var_html += '''<li><a href="#tab_harm2" data-toggle="tab"> 2 ''' + dTmpl['harm2_error_icon'] + '''</a></li>'''
-    if has_harm3:
-        var_html += '''<li><a href="#tab_harm3" data-toggle="tab"> 3 ''' + dTmpl['harm3_error_icon'] + '''</a></li>'''
-    var_html += '''<li><a href="#tab_events" data-toggle="tab">Events ''' + dTmpl['events_error_icon'] + '''</a></li>'''
-    var_html += '''<!--<li><a href="#tab_venue" data-toggle="tab">Venue ''' + dTmpl[
-        'venue_error_icon'] + '''</a></li>-->'''
-    var_html += '''<li><a href="#tab_od" data-toggle="tab">OD Graph</a></li>
-        </ul>
-    </div>
-    <div class="container-fluid">
-        <div class="row-fluid" style="background-color: white;">
-            <div class="span9">
-                <div class="tabbable">
-                    <div class="span2">
-                        <div class="well sidebar-nav">
-                            <h class="nav-list" style="font-weight: bold; font-size: 18px;">At a glance</h>
-                            <ul class="nav nav-list">
-                                '''
-    if has_drums:
-        var_html += '''<section>
-        <li class="nav-header">Drums</li>
-        <li class=""><a href="#">OD Count: ''' + "{}".format(dTmpl['drums_total_ods']) + '''</a></li>
-        <li class=""><a href="#">Fill Count: ''' + "{}".format(dTmpl['drums_total_fills']) + '''</a></li>
-        <li class=""><a href="#">Kicks on X: ''' + "{}".format(dTmpl['drums_total_kicks_x']) + '''</a></li>
-        <li class=""><a href="#">Kicks on H: ''' + "{}".format(dTmpl['drums_total_kicks_h']) + '''</a></li>
-        <li class=""><a href="#">Kicks on M: ''' + "{}".format(dTmpl['drums_total_kicks_m']) + '''</a></li>
-        <li class=""><a href="#">Kicks on E: ''' + "{}".format(dTmpl['drums_total_kicks_e']) + '''</a></li>
-        </section>
-        '''
-    if has_drums_2x:
-        var_html += '''<section>
-    <li class="nav-header">Drums (2x)</li>
-    <li class=""><a href="#">OD Count: ''' + "{}".format(dTmpl['drums_2x_total_ods']) + '''</a></li>
-    <li class=""><a href="#">Fill Count: ''' + "{}".format(dTmpl['drums_2x_total_fills']) + '''</a></li>
-    <li class=""><a href="#">Kicks on X: ''' + "{}".format(dTmpl['drums_2x_total_kicks_x']) + '''</a></li>
-    <li class=""><a href="#">Kicks on H: ''' + "{}".format(dTmpl['drums_2x_total_kicks_h']) + '''</a></li>
-    <li class=""><a href="#">Kicks on M: ''' + "{}".format(dTmpl['drums_2x_total_kicks_m']) + '''</a></li>
-    <li class=""><a href="#">Kicks on E: ''' + "{}".format(dTmpl['drums_2x_total_kicks_e']) + '''</a></li>
-    </section>
-    '''
-    if has_bass:
-        var_html += '''<section>
-    <li class="nav-header">Bass</li>
-    <li class=""><a href="#">OD Count: ''' + "{}".format(dTmpl['bass_total_ods']) + '''</a></li>
-    </section>
-    '''
-    if has_guitar:
-        var_html += '''<section>
-    <li class="nav-header">Guitar</li>
-    <li class=""><a href="#">OD Count: ''' + "{}".format(dTmpl['guitar_total_ods']) + '''</a></li>
-    </section>
-    '''
-    if has_rhythm:
-        var_html += '''<section>
-    <li class="nav-header">Rhythm</li>
-    <li class=""><a href="#">OD Count: ''' + "{}".format(dTmpl['rhythm_total_ods']) + '''</a></li>
-    </section>
-    '''
-    if has_keys:
-        var_html += '''<section>
-    <li class="nav-header">Keys</li>
-    <li class=""><a href="#">OD Count:    ''' + "{}".format(dTmpl['keys_total_ods']) + '''</a></li>
-    </section>
-    '''
-    if has_prokeys:
-        var_html += '''<section>
-    <li class="nav-header">Pro Keys</li>
-    <li class=""><a href="#">OD Count:    ''' + "{}".format(dTmpl['prokeys_total_ods']) + '''</a></li>
-    </section>
-    '''
-    if has_vocals:
-        var_html += '''<section>
-    <li class="nav-header">Vocals</li>
-    <li class=""><a href="#">Vocals OD Count: ''' + str(len(dTmpl['vocals_od_start'])) + '''</a></li>'''
-        if has_harm1:
-            var_html += '''<li class=""><a href="#">Harmony 1 OD Count: ''' + str(
-                len(dTmpl['harm1_od_start'])) + '''</a></li>'''
-
-    if has_vocals:
-        var_html += '''</section>
-    '''
-    var_html += '''</ul>
-                        </div><!--/.well -->
-                    </div><!--/span-->
-                    <div class="tab-content">
-                        <div class="tab-pane active" id="tab_drums">
-                            <div class="span12">'''
-    if dTmpl['drums_kick_gem'] != '':
-        var_html += '''
-                                <div>
-                                    <h3 class="alert alert-error">Easy Kick + Gem</h3>
-                                    <div>''' + "{}".format(dTmpl['drums_kick_gem']) + '''</div>
-                                </div>'''
-    if dTmpl['drums_kick_gem_m'] != '':
-        var_html += '''
-                                <div>
-                                    <h3 class="alert alert-error">Medium Kick + Gems</h3>
-                                    <div>''' + "{}".format(dTmpl['drums_kick_gem_m']) + '''</div>
-                                </div>'''
-    if dTmpl['drums_not_found_lower'] != '':
-        var_html += '''
-                                <div>
-                                    <h3 class="alert alert-error">Lower Difficulties</h3>
-                                    <div>''' + "{}".format(dTmpl['drums_not_found_lower']) + '''</div>
-                                </div>'''
-    if dTmpl['drums_tom_marker'] != '':
-        var_html += '''
-                                <div>
-                                    <h3 class="alert alert-error">Tom Markers</h3>
-                                    <div>''' + "{}".format(dTmpl['drums_tom_marker']) + '''</div>
-                                </div>'''
-    if dTmpl['drums_fills_errors'] != '':
-        var_html += '''
-                                <div>
-                                    <h3 class="alert alert-error">Drum Fills Issues</h3>
-                                    <div>''' + "{}".format(dTmpl['drums_fills_errors']) + '''</div>
-                                </div>'''
-    if dTmpl['drums_general_issues'] != '':
-        var_html += '''
-                                <div>
-                                    <h3 class="alert alert-error">Drum General Issues</h3>
-                                    <div>''' + "{}".format(dTmpl['drums_general_issues']) + '''</div>
-                                </div>'''
-    var_html += '''
-                            </div>
-                        </div>
-                        <div class="tab-pane" id="tab_drums_2x">
-                            <div class="span12">'''
-    if dTmpl['drums_2x_kick_gem'] != '':
-        var_html += '''
-                                <div>
-                                    <h3 class="alert alert-error">Easy Kick + Gem</h3>
-                                    <div>''' + "{}".format(dTmpl['drums_2x_kick_gem']) + '''</div>
-                                </div>'''
-    if dTmpl['drums_2x_kick_gem_m'] != '':
-        var_html += '''
-                                <div>
-                                    <h3 class="alert alert-error">Medium Kick + Gems</h3>
-                                    <div>''' + "{}".format(dTmpl['drums_2x_kick_gem_m']) + '''</div>
-                                </div>'''
-    if dTmpl['drums_2x_not_found_lower'] != '':
-        var_html += '''
-                                <div>
-                                    <h3 class="alert alert-error">Lower Difficulties</h3>
-                                    <div>''' + "{}".format(dTmpl['drums_2x_not_found_lower']) + '''</div>
-                                </div>'''
-    if dTmpl['drums_2x_tom_marker'] != '':
-        var_html += '''
-                                <div>
-                                    <h3 class="alert alert-error">Tom Markers</h3>
-                                    <div>''' + "{}".format(dTmpl['drums_2x_tom_marker']) + '''</div>
-                                </div>'''
-    if dTmpl['drums_2x_fills_errors'] != '':
-        var_html += '''
-                                <div>
-                                    <h3 class="alert alert-error">Drum Fills Issues</h3>
-                                    <div>''' + "{}".format(dTmpl['drums_2x_fills_errors']) + '''</div>
-                                </div>'''
-    if dTmpl['drums_2x_general_issues'] != '':
-        var_html += '''
-                                <div>
-                                    <h3 class="alert alert-error">Drum General Issues</h3>
-                                    <div>''' + "{}".format(dTmpl['drums_2x_general_issues']) + '''</div>
-                                </div>'''
-    var_html += '''
-                            </div>
-                        </div>
-                        <div class="tab-pane" id="tab_bass">
-                            <div class="span12">'''
-    if dTmpl['bass_green_oranges_three'] != '':
-        var_html += '''
-                                <div>
-                                    <h3 class="alert alert-error">Gem + G + O</h3>
-                                    <div>''' + "{}".format(dTmpl['bass_green_oranges_three']) + '''</div>
-                                </div>'''
-    if dTmpl['bass_chords_four_notes'] != '':
-        var_html += '''
-                                <div>
-                                    <h3 class="alert alert-error">Four-Note Chords</h3>
-                                    <div>''' + "{}".format(dTmpl['bass_chords_four_notes']) + '''</div>
-                                </div>'''
-    if dTmpl['bass_chords_three_notes'] != '':
-        var_html += '''
-                                <div>
-                                    <h3 class="alert alert-error">Three-Note Chords on Hard</h3>
-                                    <div>''' + "{}".format(dTmpl['bass_chords_three_notes']) + '''</div>
-                                </div>'''
-    if dTmpl['bass_chords_dont_exist'] != '':
-        var_html += '''
-                                <div>
-                                    <h3 class="alert alert-error">Chord Difficulty Mismatch</h3>
-                                    <div>''' + "{}".format(dTmpl['bass_chords_dont_exist']) + '''</div>
-                                </div>'''
-    if dTmpl['bass_chords_h_green_orange'] != '':
-        var_html += '''
-                                <div>
-                                    <h3 class="alert alert-error">G+O Chords on Hard</h3>
-                                    <div>''' + "{}".format(dTmpl['bass_chords_h_green_orange']) + '''</div>
-                                </div>'''
-    if dTmpl['bass_chords_m_chord_combos'] != '':
-        var_html += '''
-                                <div>
-                                    <h3 class="alert alert-error">G+B / G+O / R+O Chords on Medium</h3>
-                                    <div>''' + "{}".format(dTmpl['bass_chords_m_chord_combos']) + '''</div>
-                                </div>'''
-    if dTmpl['bass_chords_m_hopos'] != '':
-        var_html += '''
-                                <div>
-                                    <h3 class="alert alert-error">Forced HOPOs on Medium</h3>
-                                    <div>''' + "{}".format(dTmpl['bass_chords_m_hopos']) + '''</div>
-                                </div>'''
-    if dTmpl['bass_chords_easy'] != '':
-        var_html += '''
-                                <div>
-                                    <h3 class="alert alert-error">Easy Chords</h3>
-                                    <div>''' + "{}".format(dTmpl['bass_chords_easy']) + '''</div>
-                                </div>'''
-    if dTmpl['bass_general_issues'] != '':
-        var_html += '''
-                                <div>
-                                    <h3 class="alert alert-error">General Errors / Warnings</h3>
-                                    <div>''' + "{}".format(dTmpl['bass_general_issues']) + '''</div>
-                                </div>'''
-    var_html += '''
-                            </div>
-                        </div>
-                        <div class="tab-pane" id="tab_guitar">
-                            <div class="span12">'''
-    if dTmpl['guitar_green_oranges_three'] != '':
-        var_html += '''
-                                <div>
-                                    <h3 class="alert alert-error">Gem + G + O</h3>
-                                    <div>''' + "{}".format(dTmpl['guitar_green_oranges_three']) + '''</div>
-                                </div>'''
-    if dTmpl['guitar_chords_four_notes'] != '':
-        var_html += '''
-                                <div>
-                                    <h3 class="alert alert-error">Four-Note Chords</h3>
-                                    <div>''' + "{}".format(dTmpl['guitar_chords_four_notes']) + '''</div>
-                                </div>'''
-    if dTmpl['guitar_chords_three_notes'] != '':
-        var_html += '''
-                                <div>
-                                    <h3 class="alert alert-error">Three-Note Chords on Hard</h3>
-                                    <div>''' + "{}".format(dTmpl['guitar_chords_three_notes']) + '''</div>
-                                </div>'''
-    if dTmpl['guitar_chords_dont_exist'] != '':
-        var_html += '''
-                                <div>
-                                    <h3 class="alert alert-error">Chord Difficulty Mismatch</h3>
-                                    <div>''' + "{}".format(dTmpl['guitar_chords_dont_exist']) + '''</div>
-                                </div>'''
-    if dTmpl['guitar_chords_h_green_orange'] != '':
-        var_html += '''
-                                <div>
-                                    <h3 class="alert alert-error">G+O Chords on Hard</h3>
-                                    <div>''' + "{}".format(dTmpl['guitar_chords_h_green_orange']) + '''</div>
-                                </div>'''
-    if dTmpl['guitar_chords_m_chord_combos'] != '':
-        var_html += '''
-                                <div>
-                                    <h3 class="alert alert-error">G+B / G+O / R+O Chords on Medium</h3>
-                                    <div>''' + "{}".format(dTmpl['guitar_chords_m_chord_combos']) + '''</div>
-                                </div>'''
-    if dTmpl['guitar_chords_m_hopos'] != '':
-        var_html += '''
-                                <div>
-                                    <h3 class="alert alert-error">Forced HOPOs on Medium</h3>
-                                    <div>''' + "{}".format(dTmpl['guitar_chords_m_hopos']) + '''</div>
-                                </div>'''
-    if dTmpl['guitar_chords_easy'] != '':
-        var_html += '''
-                                <div>
-                                    <h3 class="alert alert-error">Easy Chords</h3>
-                                    <div>''' + "{}".format(dTmpl['guitar_chords_easy']) + '''</div>
-                                </div>'''
-    if dTmpl['guitar_general_issues'] != '':
-        var_html += '''
-                                <div>
-                                    <h3 class="alert alert-error">General Errors / Warnings</h3>
-                                    <div>''' + "{}".format(dTmpl['guitar_general_issues']) + '''</div>
-                                </div>'''
-
-    var_html += '''
-                            </div>
-                        </div>
-                        <div class="tab-pane" id="tab_rhythm">
-                            <div class="span12">'''
-    if dTmpl['rhythm_green_oranges_three'] != '':
-        var_html += '''
-                                <div>
-                                    <h3 class="alert alert-error">Gem + G + O</h3>
-                                    <div>''' + "{}".format(dTmpl['rhythm_green_oranges_three']) + '''</div>
-                                </div>'''
-    if dTmpl['rhythm_chords_four_notes'] != '':
-        var_html += '''
-                                <div>
-                                    <h3 class="alert alert-error">Four-Note Chords</h3>
-                                    <div>''' + "{}".format(dTmpl['rhythm_chords_four_notes']) + '''</div>
-                                </div>'''
-    if dTmpl['rhythm_chords_three_notes'] != '':
-        var_html += '''
-                                <div>
-                                    <h3 class="alert alert-error">Three-Note Chords on Hard</h3>
-                                    <div>''' + "{}".format(dTmpl['rhythm_chords_three_notes']) + '''</div>
-                                </div>'''
-    if dTmpl['rhythm_chords_dont_exist'] != '':
-        var_html += '''
-                                <div>
-                                    <h3 class="alert alert-error">Chord Difficulty Mismatch</h3>
-                                    <div>''' + "{}".format(dTmpl['rhythm_chords_dont_exist']) + '''</div>
-                                </div>'''
-    if dTmpl['rhythm_chords_h_green_orange'] != '':
-        var_html += '''
-                                <div>
-                                    <h3 class="alert alert-error">G+O Chords on Hard</h3>
-                                    <div>''' + "{}".format(dTmpl['rhythm_chords_h_green_orange']) + '''</div>
-                                </div>'''
-    if dTmpl['rhythm_chords_m_chord_combos'] != '':
-        var_html += '''
-                                <div>
-                                    <h3 class="alert alert-error">G+B / G+O / R+O Chords on Medium</h3>
-                                    <div>''' + "{}".format(dTmpl['rhythm_chords_m_chord_combos']) + '''</div>
-                                </div>'''
-    if dTmpl['rhythm_chords_m_hopos'] != '':
-        var_html += '''
-                                <div>
-                                    <h3 class="alert alert-error">Forced HOPOs on Medium</h3>
-                                    <div>''' + "{}".format(dTmpl['rhythm_chords_m_hopos']) + '''</div>
-                                </div>'''
-    if dTmpl['rhythm_chords_easy'] != '':
-        var_html += '''
-                                <div>
-                                    <h3 class="alert alert-error">Easy Chords</h3>
-                                    <div>''' + "{}".format(dTmpl['rhythm_chords_easy']) + '''</div>
-                                </div>'''
-    if dTmpl['rhythm_general_issues'] != '':
-        var_html += '''
-                                <div>
-                                    <h3 class="alert alert-error">General Errors / Warnings</h3>
-                                    <div>''' + "{}".format(dTmpl['rhythm_general_issues']) + '''</div>
-                                </div>'''
-
-    var_html += '''</div>
-                        
-                        </div>
-                        <div class="tab-pane" id="tab_prokeys">
-                            <div class="span12">'''
-
-    if dTmpl['real_keys_x_lane_shift_issues'] + dTmpl['real_keys_h_lane_shift_issues'] + dTmpl['real_keys_m_lane_shift_issues'] + dTmpl['real_keys_e_lane_shift_issues'] != '':
-        var_html += '''
-                                <div>
-                                    <h3 class="alert alert-error">Lane Shift Issues</h3>
-                                    <div>''' + "{}".format(dTmpl['real_keys_x_lane_shift_issues']) + '''</div>
-                                    <div>''' + "{}".format(dTmpl['real_keys_h_lane_shift_issues']) + '''</div>
-                                    <div>''' + "{}".format(dTmpl['real_keys_m_lane_shift_issues']) + '''</div>
-                                    <div>''' + "{}".format(dTmpl['real_keys_e_lane_shift_issues']) + '''</div>
-                                </div>'''
-
-    if dTmpl['real_keys_x_range_issues'] + dTmpl['real_keys_h_range_issues'] + dTmpl['real_keys_m_range_issues'] + dTmpl['real_keys_e_range_issues'] != '':
-        var_html += '''
-                                <div>
-                                    <h3 class="alert alert-error">Range Issues</h3>
-                                    <div>''' + "{}".format(dTmpl['real_keys_x_range_issues']) + '''</div>
-                                    <div>''' + "{}".format(dTmpl['real_keys_h_range_issues']) + '''</div>
-                                    <div>''' + "{}".format(dTmpl['real_keys_m_range_issues']) + '''</div>
-                                    <div>''' + "{}".format(dTmpl['real_keys_e_range_issues']) + '''</div>
-                                </div>'''
-
-    if dTmpl['real_keys_x_general_issues'] + dTmpl['real_keys_h_general_issues'] + dTmpl['real_keys_m_general_issues'] + dTmpl['real_keys_e_general_issues'] != '':
-        var_html += '''
-                                <div>
-                                    <h3 class="alert alert-error">General Issues</h3>
-                                    <div>''' + "{}".format(dTmpl['real_keys_x_general_issues']) + '''</div>
-                                    <div>''' + "{}".format(dTmpl['real_keys_h_general_issues']) + '''</div>
-                                    <div>''' + "{}".format(dTmpl['real_keys_m_general_issues']) + '''</div>
-                                    <div>''' + "{}".format(dTmpl['real_keys_e_general_issues']) + '''</div>
-                                </div>'''
-
-    var_html += '''
-                            </div>
-                        </div>
-                        <div class="tab-pane" id="tab_keys">
-                            <div class="span12"> '''
-    if dTmpl['keys_general_issues'] != '':
-        var_html += '''
-                                <div>
-                                    <h3 class="alert alert-error">General Issues</h3>
-                                    <div>''' + "{}".format(dTmpl['keys_general_issues']) + '''</div>
-                                </div>'''
-    if dTmpl['keys_gems_not_found'] != '':
-        var_html += '''
-                                <div>
-                                    <h3 class="alert alert-error">Difficulty Note Mismatch</h3>
-                                    <div>''' + "{}".format(dTmpl['keys_gems_not_found']) + '''</div>
-                                </div>'''
-    if dTmpl['keys_chords_four_notes'] != '':
-        var_html += '''
-                                <div>
-                                    <h3 class="alert alert-error">Four-Note Chords</h3>
-                                    <div>''' + "{}".format(dTmpl['keys_chords_four_notes']) + '''</div>
-                                </div>'''
-    if dTmpl['keys_chords_three_notes'] != '':
-        var_html += '''
-                                <div>
-                                    <h3 class="alert alert-error">Three-Note Chords on Medium</h3>
-                                    <div>''' + "{}".format(dTmpl['keys_chords_three_notes']) + '''</div>
-                                </div>'''
-    if dTmpl['keys_chords_easy'] != '':
-        var_html += '''
-                                <div>
-                                    <h3 class="alert alert-error">Easy Chords</h3>
-                                    <div>''' + "{}".format(dTmpl['keys_chords_easy']) + '''</div>
-                                </div>'''
-    var_html += '''                            
-                            </div>
-                        
-                        </div>
-                        <div class="tab-pane" id="tab_vocals">
-                            <div class="span12">'''
-
-    if len(dTmpl['vocals_od_start']) != len(dTmpl['harm1_od_start']):
-        if has_harm1:
-            var_html += '''
-                                <div class="alert alert-error">
-                                    <h3>Vocals Errors</h3>
-                                    <div>- Number of OD phrases in PART VOCALS (''' + str(
-                len(dTmpl['vocals_od_start'])) + ''') is different than HARM1 (''' + str(len(dTmpl['harm1_od_start'])) + ''')</div>
-                                </div>
-            '''
-    else:
-        for index, item in enumerate(dTmpl['vocals_od_start']):
-            if item != dTmpl['harm1_od_start'][index] or dTmpl['vocals_od_end'][index] != dTmpl['harm1_od_end'][index]:
-                var_html += '''
-                            <div class="alert alert-error">
-                                <h3>Vocals Errors (Overdrive)</h3>
-                                <div>
-                                    ''' + "- Overdrive #{} in VOCALS [ Starts: {}, Ends: {} ] starts or ends in a different place than HARM1 [ Starts: {}, Ends: {} ]".format(
-                    index + 1, format_location(item), format_location(dTmpl['vocals_od_end'][index]),
-                    format_location(dTmpl['harm1_od_start'][index]), format_location(dTmpl['harm1_od_end'][index])) + '''
-                                </div>
-                            </div>
-                '''
-    if dTmpl['vocals_general_issues'] != '':
-        var_html += '''
-                                <div>
-                                    <h3 class="alert alert-error">General Issues</h3>
-                                    <div>''' + "{}".format(dTmpl['vocals_general_issues']) + '''</div>
-                                </div>'''
-    var_html += '''
-                                <h3 class="alert alert-info">Lyrics</h3>
-                                ''' + (dTmpl['vocals_phrases']) + '''
-                            </div>
-                        </div>
-                        <div class="tab-pane" id="tab_harm1">
-                            <div class="span12"> '''
-    if dTmpl['harm1_general_issues'] != '':
-        var_html += '''
-                                <div>
-                                    <h3 class="alert alert-error">General Issues</h3>
-                                    <div>''' + "{}".format(dTmpl['harm1_general_issues']) + '''</div>
-                                </div>'''
-    var_html += '''
-                                <h3 class="alert alert-info">Lyrics</h3>
-                                    ''' + (dTmpl['harm1_phrases']) + '''
-                            </div>
-                        
-                        </div>
-                        <div class="tab-pane" id="tab_harm2">
-                            <div class="span12"> '''
-    if dTmpl['harm2_general_issues'] != '':
-        var_html += '''
-                                <div>
-                                    <h3 class="alert alert-error">General Issues</h3>
-                                    <div>''' + "{}".format(dTmpl['harm2_general_issues']) + '''</div>
-                                </div>'''
-    var_html += '''
-                            <h3 class="alert alert-info">Lyrics</h3>
-                                ''' + (dTmpl['harm2_phrases']) + '''
-                            </div>
-                        
-                        </div>
-                        <div class="tab-pane" id="tab_harm3">
-                            <div class="span12"> '''
-    if dTmpl['harm3_general_issues'] != '':
-        var_html += '''
-                                <div>
-                                    <h3 class="alert alert-error">General Issues</h3>
-                                    <div>''' + "{}".format(dTmpl['harm3_general_issues']) + '''</div>
-                                </div>'''
-    var_html += '''
-                            <h3 class="alert alert-info">Lyrics</h3>
-                                ''' + (dTmpl['harm3_phrases']) + '''
-                            </div>
-                        
-                        </div>
-                        <div class="tab-pane" id="tab_events">
-                            <div class="span12"> 
-                            <div class="lead"><h3>Event Types</h3></div>
-                            '''
-    if dTmpl['events_list'] != '':
-        var_html += '''
-                                <div>                                    
-                                    <div>''' + "{}".format(dTmpl['events_list']) + '''</div>
-                                </div>
-                                <table class="" id="" width="''' + "{}".format((int(dTmpl['last_event']) * 10)) + '''px">
-                                    <tr>
-                                    </tr>
-                                </table>
-    '''
-    var_html += '''
-                            </div>                        
-                        </div>
-                        <div class="tab-pane" id="tab_venue">
-                            <div class="span12"> 
-        '''
-    var_html += '''
-                            </div>
-                        </div>
-                        <div class="tab-pane" id="tab_od">
-                            <div class="span12">
-                                <div class="lead"><h3>Overdrive Visualizer</h3></div>
-                                <table class="table table-condensed" id="" width="''' + "{}".format(
-        (int(dTmpl['last_event']) * 10)) + '''px">
-                            '''
-    for instrument in ['drums', 'drums_2x', 'bass', 'guitar', 'rhythm', 'keys']:
-        full_ods = dTmpl[instrument + '_pos_od']
-        if len(full_ods) > 0:
-            if len(full_ods) < 1:
-                full_ods = []
-            var_html += ''' <tr > 
-                                                <td>''' + instrument.title() + '''</td>
-                                    '''
-            for n in range(1, int(dTmpl['last_event'])):
-                if n in full_ods:
-                    var_html += '''
-                                                <td width="10px" style="background-color:#D4A017" id="''' + "{}_{}".format(
-                        instrument, n) + '''"><a href="#" title="''' + "Aprox. Position {}".format(
-                        n) + '''" alt="''' + "Aprox. Position {}".format(n) + '''">...</a></td>
-                                        '''
-                else:
-                    var_html += '''
-                                                <td width="10px" style="" id="''' + "{}_{}".format(instrument, n) + '''"></td>
-                                        '''
-            var_html += ''' </tr> '''
-    var_html += ''' </table> '''
-    var_html += '''                    
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-    </div><!--/.fluid-container-->    
-    <script src="js/jquery.js"></script>
-    <script src="js/bootstrap.min.js"></script>
-    </body>
-</html>
-'''
-    debug_html(str(var_html))
-
+write_html_output(output_file_name=OUTPUT_HTML_FILE, page_title=page_title, reaper_file_name=file_name, dTmpl=dTmpl, available_tracks=available_tracks)
 console_msg('Done! Opening web browser.')
 webbrowser.open(OUTPUT_HTML_FILE)
