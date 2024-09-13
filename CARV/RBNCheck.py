@@ -677,31 +677,29 @@ def handle_drums(content, part_name):
             "Found end {} at {} - ( {}, {} )".format(num_to_text[notes_item.value], time_sig_map.tick_to_measure_str(notes_item.pos),
                                                      notes_item.value, notes_item.pos), True)
         # Check for any gem under solo marker... we need at least one gem for the solo to be valid
-    for index, item in enumerate(solo_start):
+    for index, (start_tick, end_tick) in enumerate(zip(solo_start, solo_end)):
         gems_text = ''
-        if [x for x in l_gems if 60 <= x.value <= 64 and item <= x.pos <= solo_end[index]]:
-            counter[item] += 1
+        if [x for x in l_gems if 60 <= x.value <= 64 and start_tick <= x.pos <= end_tick]:
+            counter[start_tick] += 1
             gems_text += 'Easy + '
-        if [x for x in l_gems if 72 <= x.value <= 76 and item <= x.pos <= solo_end[index]]:
-            counter[item] += 1
+        if [x for x in l_gems if 72 <= x.value <= 76 and start_tick <= x.pos <= end_tick]:
+            counter[start_tick] += 1
             gems_text += 'Medium + '
-        if [x for x in l_gems if 84 <= x.value <= 88 and item <= x.pos <= solo_end[index]]:
-            counter[item] += 1
+        if [x for x in l_gems if 84 <= x.value <= 88 and start_tick <= x.pos <= end_tick]:
+            counter[start_tick] += 1
             gems_text += 'Hard + '
-        if [x for x in l_gems if 96 <= x.value <= 100 and item <= x.pos <= solo_end[index]]:
-            counter[item] += 1
+        if [x for x in l_gems if 96 <= x.value <= 100 and start_tick <= x.pos <= end_tick]:
+            counter[start_tick] += 1
             gems_text += 'Expert + '
 
-        debug("INFO: Solo Marker #{} starts at {} ends at {} - [ {},{} ]".format(index + 1, time_sig_map.tick_to_measure_str(item),
-                                                                                 time_sig_map.tick_to_measure_str(solo_end[index]), item,
-                                                                                 solo_end[index]), True)
+        solo_start_m_str = time_sig_map.tick_to_measure_str(start_tick)
+        solo_end_m_str = time_sig_map.tick_to_measure_str(end_tick)
+        debug(f"INFO: Solo Marker #{index + 1} starts at {solo_start_m_str} ends at {solo_end_m_str} - [ {start_tick},{end_tick} ]", True)
 
-        if (counter[item] < 4):
+        if counter[start_tick] < 4:
             debug("ERROR: Gems are missing in solo marker #{} on at least one difficulty; only found {} gems".format(
                 index + 1, gems_text[:-3]), True)
-            localTmpl[
-                "drums_general_issues"] += '<div class="row-fluid"><span class="span12"><strong class="">0.0</strong> <span>Gems are missing in solo marker #{} on at least one difficulty; only found {} gems</span> </span></div>'.format(
-                index + 1, gems_text[:-3])
+            localTmpl["drums_general_issues"] += f'<div class="row-fluid"><span class="span12"><strong class="">{solo_start_m_str}-{solo_end_m_str}</strong> <span>Gems are missing in solo marker #{index + 1} on at least one difficulty; only found {gems_text[:-3]} gems</span> </span></div>'
             has_error = True
     debug("=================== ENDS GENERAL DRUMS: No gems under solo marker ===================", True)
     # Get all positions for ods
@@ -1104,31 +1102,29 @@ def handle_guitar(content, part_name):
                                                      notes_item.value, notes_item.pos), True)
         # Check for any gem under solo marker... we need at least one gem for the solo to be valid
     # for midi_check in [60,61,62,63,64,72,73,74,75,76,84,85,86,87,88,96,97,98,99,100]:
-    for index, item in enumerate(solo_start):
+    for index, (start_tick, end_tick) in enumerate(zip(solo_start, solo_end)):
         gems_text = ''
-        if [x for x in l_gems if 60 <= x.value <= 64 and item <= x.pos <= solo_end[index]]:
-            counter[item] += 1
+        if [x for x in l_gems if 60 <= x.value <= 64 and start_tick <= x.pos <= end_tick]:
+            counter[start_tick] += 1
             gems_text += 'Easy + '
-        if [x for x in l_gems if 72 <= x.value <= 76 and item <= x.pos <= solo_end[index]]:
-            counter[item] += 1
+        if [x for x in l_gems if 72 <= x.value <= 76 and start_tick <= x.pos <= end_tick]:
+            counter[start_tick] += 1
             gems_text += 'Medium + '
-        if [x for x in l_gems if 84 <= x.value <= 88 and item <= x.pos <= solo_end[index]]:
-            counter[item] += 1
+        if [x for x in l_gems if 84 <= x.value <= 88 and start_tick <= x.pos <= end_tick]:
+            counter[start_tick] += 1
             gems_text += 'Hard + '
-        if [x for x in l_gems if 96 <= x.value <= 100 and item <= x.pos <= solo_end[index]]:
-            counter[item] += 1
+        if [x for x in l_gems if 96 <= x.value <= 100 and start_tick <= x.pos <= end_tick]:
+            counter[start_tick] += 1
             gems_text += 'Expert + '
 
-        debug("INFO: Solo Marker #{} starts at {} ends at {} - [ {},{} ]".format(index + 1, time_sig_map.tick_to_measure_str(item),
-                                                                                 time_sig_map.tick_to_measure_str(solo_end[index]), item,
-                                                                                 solo_end[index]), True)
+        solo_start_m_str = time_sig_map.tick_to_measure_str(start_tick)
+        solo_end_m_str = time_sig_map.tick_to_measure_str(end_tick)
+        debug(f"INFO: Solo Marker #{index + 1} starts at {solo_start_m_str} ends at {solo_end_m_str} - [ {start_tick},{end_tick} ]", True)
 
-        if counter[item] < 4:
+        if counter[start_tick] < 4:
             debug("ERROR: Gems are missing in solo marker #{} on at least one difficulty; only found {} gems".format(
                 index + 1, gems_text[:-3]), True)
-            localTmpl[
-                output_part_var + "_general_issues"] += '<div class="row-fluid"><span class="span12"><strong class="">0.0</strong> <span>Gems are missing in solo marker #{} on at least one difficulty; only found {} gems</span> </span></div>'.format(
-                index + 1, gems_text[:-3])
+            localTmpl[f'{output_part_var}_general_issues'] += f'<div class="row-fluid"><span class="span12"><strong class="">{solo_start_m_str}-{solo_end_m_str}</strong> <span>Gems are missing in solo marker #{index + 1} on at least one difficulty; only found {gems_text[:-3]} gems</span> </span></div>'
             has_error = True
     debug("=================== ENDS GENERAL " + part_name + ": No gems under solo marker ===================", True)
 
@@ -1853,31 +1849,29 @@ def handle_keys(content, part_name):
                                                      notes_item.value, notes_item.pos), True)
     # Check for any gem under solo marker... we need at least one gem for the solo to be valid
     # for midi_check in [60,61,62,63,64,72,73,74,75,76,84,85,86,87,88,96,97,98,99,100]:
-    for index, item in enumerate(solo_start):
+    for index, (start_tick, end_tick) in enumerate(zip(solo_start, solo_end)):
         gems_text = ''
-        if [x for x in l_gems if 60 <= x.value <= 64 and item <= x.pos <= solo_end[index]]:
-            counter[item] += 1
+        if [x for x in l_gems if 60 <= x.value <= 64 and start_tick <= x.pos <= end_tick]:
+            counter[start_tick] += 1
             gems_text += 'Easy + '
-        if [x for x in l_gems if 72 <= x.value <= 76 and item <= x.pos <= solo_end[index]]:
-            counter[item] += 1
+        if [x for x in l_gems if 72 <= x.value <= 76 and start_tick <= x.pos <= end_tick]:
+            counter[start_tick] += 1
             gems_text += 'Medium + '
-        if [x for x in l_gems if 84 <= x.value <= 88 and item <= x.pos <= solo_end[index]]:
-            counter[item] += 1
+        if [x for x in l_gems if 84 <= x.value <= 88 and start_tick <= x.pos <= end_tick]:
+            counter[start_tick] += 1
             gems_text += 'Hard + '
-        if [x for x in l_gems if 96 <= x.value <= 100 and item <= x.pos <= solo_end[index]]:
-            counter[item] += 1
+        if [x for x in l_gems if 96 <= x.value <= 100 and start_tick <= x.pos <= end_tick]:
+            counter[start_tick] += 1
             gems_text += 'Expert + '
 
-        debug("INFO: Solo Marker #{} starts at {} ends at {} - [ {},{} ]".format(index + 1, time_sig_map.tick_to_measure_str(item),
-                                                                                 time_sig_map.tick_to_measure_str(solo_end[index]), item,
-                                                                                 solo_end[index]), True)
+        solo_start_m_str = time_sig_map.tick_to_measure_str(start_tick)
+        solo_end_m_str = time_sig_map.tick_to_measure_str(end_tick)
+        debug(f"INFO: Solo Marker #{index + 1} starts at {solo_start_m_str} ends at {solo_end_m_str} - [ {start_tick},{end_tick} ]", True)
 
-        if (counter[item] < 4):
+        if counter[start_tick] < 4:
             debug("ERROR: Gems are missing in solo marker #{} on at least one difficulty; only found {} gems".format(
                 index + 1, gems_text[:-3]), True)
-            localTmpl[
-                "keys_general_issues"] += '<div class="row-fluid"><span class="span12"><strong class="">{}</strong> <span>Gems are missing in solo marker #{} on at least one difficulty; only found {} gems</span> </span></div>'.format(
-                time_sig_map.tick_to_measure_str(item), index + 1, gems_text[:-3])
+            localTmpl["keys_general_issues"] += f'<div class="row-fluid"><span class="span12"><strong class="">{solo_start_m_str}-{solo_end_m_str}</strong> <span>Gems are missing in solo marker #{index + 1} on at least one difficulty; only found {gems_text[:-3]} gems</span> </span></div>'
             has_error = True
     debug("=================== ENDS GENERAL KEYS: No gems under solo marker ===================", True)
     '''
@@ -2580,6 +2574,7 @@ with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:
         track_content = ""
         media_item = media_item + 1
 
+    debug(f'\n\n----DTMPL----\n{dTmpl}')
 
 write_html_output(output_file_name=OUTPUT_HTML_FILE, page_title=page_title, reaper_file_name=file_name, dTmpl=dTmpl, available_tracks=available_tracks)
 console_msg('Done! Opening web browser.')
