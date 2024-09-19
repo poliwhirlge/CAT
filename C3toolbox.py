@@ -3937,7 +3937,7 @@ def check_capitalization(instrument, selected):
                     result = 1
                     check = 1
                     #If we find both, we ask the user whether to abort or proceed
-                    result = RPR_MB( "The first word in this phrase ("+event[3].decode('ascii', 'ignore')+") is not capitalized. Capitalize it?", "Lower case found", 1 )
+                    result = RPR_MB(f'The first word in this phrase ("{event[3]}") is not capitalized. Capitalize it?', "Lower case found", 1)
                     if result == 1:
                         if quotes == 0:
                             event[3] = event[3].capitalize()
@@ -3955,7 +3955,7 @@ def check_capitalization(instrument, selected):
                     result = 1
                     check = 1
                     #If we find both, we ask the user whether to abort or proceed
-                    result = RPR_MB( "A word in the middle of the phrase is capitalized ("+event[3].decode('ascii', 'ignore')+"). Make it lower case?", "Upper case found", 1 )
+                    result = RPR_MB( f'A word in the middle of the phrase is capitalized ("{event[3]}"). Make it lower case?', "Upper case found", 1 )
                     if result == 1:
                         if quotes == 0:
                             event[3] = event[3].lower()
