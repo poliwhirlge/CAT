@@ -73,6 +73,15 @@ def execute_this(function):
         subwindow.launch()
 
 
+class GenerateProKeysRangeMarkers:
+    @staticmethod
+    def launch():
+        global root
+        root.destroy()
+        C3toolbox.startup()
+        C3toolbox.generate_pro_keys_range_markers()
+
+
 def RunCARV():
     global root
     root.destroy()
@@ -220,8 +229,7 @@ if __name__ == '__main__':
     createSingBtn.grid(row=4, column=3, rowspan=1, sticky="WE", padx=5, pady=2)
 
     secSupersets = tkinter.LabelFrame(root, text=" Supersets: ")
-    secSupersets.grid(row=4, columnspan=5, sticky='WE', \
-                      padx=5, pady=5, ipadx=5, ipady=5)
+    secSupersets.grid(row=4, columnspan=5, sticky='WE', padx=5, pady=5, ipadx=5, ipady=5)
 
     reductionsBtn = tkinter.Button(secSupersets, text="Automatic reductions (5-lane)", command=lambda: execute_this('reduce_5lane'))
     reductionsBtn.grid(row=4, column=1, rowspan=1, sticky="WE", padx=5, pady=2)
@@ -239,8 +247,7 @@ if __name__ == '__main__':
     generalBtn.grid(row=4, column=5, rowspan=1, sticky="WE", padx=5, pady=2)
 
     secPGB = tkinter.LabelFrame(root, text=" Pro Guitar/Bass: ")
-    secPGB.grid(row=5, columnspan=5, sticky='WE', \
-                padx=5, pady=5, ipadx=5, ipady=5)
+    secPGB.grid(row=5, columnspan=5, sticky='WE', padx=5, pady=5, ipadx=5, ipady=5)
 
     GenerateRootNotesBtn = tkinter.Button(secPGB, text="Generate Root Notes", command=lambda: execute_this('pgrootnotes'))
     GenerateRootNotesBtn.grid(row=1, column=1, rowspan=1, sticky="WE", padx=5, pady=2)
@@ -253,16 +260,21 @@ if __name__ == '__main__':
 
     ReduceFromBasicGtrBtn = tkinter.Button(secPGB, text="Reduce from 5-lane", command=lambda: execute_this("remove_notes_pg"))
     ReduceFromBasicGtrBtn.grid(row=1, column=4, rowspan=1, sticky="WE", padx=5, pady=2)
+
+    sec_pro_keys = tkinter.LabelFrame(root, text=' Pro Keys: ')
+    sec_pro_keys.grid(row=6, columnspan=5, sticky='WE', padx=5, pady=5, ipadx=5, ipady=5)
+
+    generate_pro_keys_ranges = tkinter.Button(sec_pro_keys, text="Generate Pro Keys Range Markers", command=lambda: GenerateProKeysRangeMarkers.launch())
+    generate_pro_keys_ranges.grid(row=1, column=1, rowspan=1, sticky="WE", padx=5, pady=2)
+
     secValidation = tkinter.LabelFrame(root, text=" Validation: ")
-    secValidation.grid(row=6, columnspan=5, sticky='WE', \
-                       padx=5, pady=5, ipadx=5, ipady=5)
+    secValidation.grid(row=7, columnspan=5, sticky='WE', padx=5, pady=5, ipadx=5, ipady=5)
 
     CARVBtn = tkinter.Button(secValidation, text="Run C3 Automatic Rules Validator (CARV)", command=RunCARV)
     CARVBtn.grid(row=1, column=1, rowspan=1, sticky="WE", padx=5, pady=2)
 
     logo = tkinter.Frame(root, bg="#000")
-    logo.grid(row=9, column=0, columnspan=10, sticky='WE', \
-              padx=0, pady=0, ipadx=0, ipady=0)
+    logo.grid(row=9, column=0, columnspan=10, sticky='WE', padx=0, pady=0, ipadx=0, ipady=0)
 
     path = os.path.join(sys.path[0], "banner.gif")
     img = tkinter.PhotoImage(file=path)

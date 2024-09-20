@@ -36,6 +36,7 @@ class ReaperConsole:
 reaper_console = ReaperConsole()
 
 sys.stderr = reaper_console
+console_log = RPR_ShowConsoleMsg
 
 from C3notes import *
 
@@ -5859,6 +5860,26 @@ def gpimport_drums(instrument, notedata, GPnotes, offset):
     # array_notes.append([selection, 0, pitches[0][1][0], velocity, 60, channel])
 
     write_midi(instrument_track, [array_notes, array_events], end_part, start_part)
+
+
+def generate_pro_keys_range_markers():
+    track_id = tracks_array['PART REAL_KEYS_X']
+    array_instrument_data = process_instrument(track_id)
+    array_instrument_notes = array_instrument_data[1]
+    array_notes, array_events = create_notes_array(array_instrument_notes)
+    RPR_ShowConsoleMsg(f'{array_notes}\n\n')
+    RPR_ShowConsoleMsg(f'{array_events}\n\n')
+    RPR_ShowConsoleMsg(f'{measures_array}\n\n')
+    keys_high, keys_low = 72, 48
+    for note in array_notes:
+        try:
+            select_status, t, midi_note, velocity, duration, note_on_off_channel = note
+            temp = mbt(t)
+            RPR_ShowConsoleMsg(f'Note at {temp}\n')
+        except Exception as e:
+            RPR_ShowConsoleMsg(f'Problem with note: {note}\n\n')
+
+
 
 
 def startup():
