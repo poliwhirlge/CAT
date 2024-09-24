@@ -5871,15 +5871,60 @@ def generate_pro_keys_range_markers():
     RPR_ShowConsoleMsg(f'{array_events}\n\n')
     RPR_ShowConsoleMsg(f'{measures_array}\n\n')
     keys_high, keys_low = 72, 48
+    note_range_by_measure = {}
     for note in array_notes:
         try:
-            select_status, t, midi_note, velocity, duration, note_on_off_channel = note
-            temp = mbt(t)
-            RPR_ShowConsoleMsg(f'Note at {temp}\n')
+            select_status, tick, midi_note, velocity, duration, note_on_off_channel = note
+            if not keys_low <= midi_note <= keys_high:
+                continue
+
+            m, b, t, relative_position = mbt(tick)
+            if m not in note_range_by_measure:
+                note_range_by_measure[m] = [midi_note, midi_note]
+            else:
+                current_min, current_max = note_range_by_measure[m]
+                note_range_by_measure[m] = [min(current_min, midi_note), max(current_max, midi_note)]
+
+            ###
+            # if m + 1 not in note_range_by_measure:
+            #     note_range_by_measure[m + 1] = [midi_note, midi_note]
+            # else:
+            #     current_min, current_max = note_range_by_measure[m + 1]
+            #     note_range_by_measure[m + 1] = [min(current_min, midi_note), max(current_max, midi_note)]
+            ###
         except Exception as e:
             RPR_ShowConsoleMsg(f'Problem with note: {note}\n\n')
 
+    for k, v in note_range_by_measure.items():
+        RPR_ShowConsoleMsg(f'Measure {k} range {v}\n')
 
+    note_ranges = [[k, v] for k, v in note_range_by_measure.items()]
+    valid_pk_ranges = [(48, 64), (53, 69), (57, 72)]
+    solution_cache = {}
+
+    def fn(idx, curr_range):
+        key = f'{idx} {curr_range}'
+        if key in solution_cache:
+            return solution_cache[key]
+        if idx >= len(note_ranges):
+            return [0, []]
+        measure, [lowest_note, highest_note] = note_ranges[idx]
+
+        valid_ranges = [(l, h) for l, h in valid_pk_ranges if (l <= lowest_note <= highest_note <= h)]
+        # RPR_ShowConsoleMsg(f'Valid ranges: {valid_ranges} for {lowest_note}-{highest_note}\n')
+        if len(valid_ranges) == 0:
+            RPR_ShowConsoleMsg(f'No solutions due to measure {measure} with range {lowest_note}-{highest_note}\n')
+            return [0, []]
+
+        temp = [[cost + (0 if r[0] == curr_range[0] and r[1] == curr_range[1] else 1), path + [r]] for [cost, path], r in [[fn(idx + 1, r), r] for r in valid_ranges]]
+
+        solution_cache[key] = min(temp, key=lambda t: t[0])
+
+        return min(temp)
+
+    RPR_ShowConsoleMsg(f'Solution: {fn(0, (-1, -1))}\n')
+    RPR_ShowConsoleMsg(f'Len: {len(fn(0, (-1, -1))[1])}\n')
+    RPR_ShowConsoleMsg(f'Len: {len(note_ranges)}\n')
 
 
 def startup():
