@@ -5867,11 +5867,19 @@ def generate_pro_keys_range_markers():
     array_instrument_data = process_instrument(track_id)
     array_instrument_notes = array_instrument_data[1]
     array_notes, array_events = create_notes_array(array_instrument_notes)
-    RPR_ShowConsoleMsg(f'{array_notes}\n\n')
-    RPR_ShowConsoleMsg(f'{array_events}\n\n')
-    RPR_ShowConsoleMsg(f'{measures_array}\n\n')
+    RPR_ShowConsoleMsg(f'Array notes: {array_notes}\n\n')
+    RPR_ShowConsoleMsg(f'Array events: {array_events}\n\n')
+    RPR_ShowConsoleMsg(f'Measures array: {measures_array}\n\n')
     keys_high, keys_low = 72, 48
     note_range_by_measure = {}
+
+    def update_note_ranges_cache(m: int, midi_note: int):
+        if m not in note_range_by_measure:
+            note_range_by_measure[m] = [midi_note, midi_note]
+        else:
+            current_min, current_max = note_range_by_measure[m]
+            note_range_by_measure[m] = [min(current_min, midi_note), max(current_max, midi_note)]
+
     for note in array_notes:
         try:
             select_status, tick, midi_note, velocity, duration, note_on_off_channel = note
@@ -5879,27 +5887,18 @@ def generate_pro_keys_range_markers():
                 continue
 
             m, b, t, relative_position = mbt(tick)
-            if m not in note_range_by_measure:
-                note_range_by_measure[m] = [midi_note, midi_note]
-            else:
-                current_min, current_max = note_range_by_measure[m]
-                note_range_by_measure[m] = [min(current_min, midi_note), max(current_max, midi_note)]
-
-            ###
-            # if m + 1 not in note_range_by_measure:
-            #     note_range_by_measure[m + 1] = [midi_note, midi_note]
-            # else:
-            #     current_min, current_max = note_range_by_measure[m + 1]
-            #     note_range_by_measure[m + 1] = [min(current_min, midi_note), max(current_max, midi_note)]
-            ###
+            update_note_ranges_cache(m, midi_note)
+            update_note_ranges_cache(m - 1, midi_note)  # must be in range at least 1 measure earlier
         except Exception as e:
             RPR_ShowConsoleMsg(f'Problem with note: {note}\n\n')
 
-    for k, v in note_range_by_measure.items():
-        RPR_ShowConsoleMsg(f'Measure {k} range {v}\n')
+    note_ranges = [[k, v] for k, v in sorted(note_range_by_measure.items(), key=lambda item: item[0])]
 
-    note_ranges = [[k, v] for k, v in note_range_by_measure.items()]
-    valid_pk_ranges = [(48, 64), (53, 69), (57, 72)]
+    pk_range_to_marker = {(48, 64): 0, (53, 69): 5, (57, 72): 9,
+                          (50, 65): 2, (52, 67): 4, (55, 71): 7}
+    primary_pk_ranges = [pk_range for pk_range, note in pk_range_to_marker.items() if note in [1, 5, 9]]
+    all_pk_ranges = [pk_range for pk_range, note in pk_range_to_marker.items()]
+
     solution_cache = {}
 
     def fn(idx, curr_range):
@@ -5910,10 +5909,10 @@ def generate_pro_keys_range_markers():
             return [0, []]
         measure, [lowest_note, highest_note] = note_ranges[idx]
 
-        valid_ranges = [(l, h) for l, h in valid_pk_ranges if (l <= lowest_note <= highest_note <= h)]
-        # RPR_ShowConsoleMsg(f'Valid ranges: {valid_ranges} for {lowest_note}-{highest_note}\n')
+        valid_ranges = [(l, h) for l, h in all_pk_ranges if (l <= lowest_note <= highest_note <= h)]
         if len(valid_ranges) == 0:
             RPR_ShowConsoleMsg(f'No solutions due to measure {measure} with range {lowest_note}-{highest_note}\n')
+            solution_cache[key] = [0, []]
             return [0, []]
 
         temp = [[cost + (0 if r[0] == curr_range[0] and r[1] == curr_range[1] else 1), path + [r]] for [cost, path], r in [[fn(idx + 1, r), r] for r in valid_ranges]]
@@ -5922,9 +5921,14 @@ def generate_pro_keys_range_markers():
 
         return min(temp)
 
-    RPR_ShowConsoleMsg(f'Solution: {fn(0, (-1, -1))}\n')
-    RPR_ShowConsoleMsg(f'Len: {len(fn(0, (-1, -1))[1])}\n')
-    RPR_ShowConsoleMsg(f'Len: {len(note_ranges)}\n')
+    cost, reversed_path = fn(0, (-1, -1))
+    optimal_pk_markers = list(zip([measure for measure, _ in note_ranges], [pk_range_to_marker[r] for r in reversed(reversed_path)]))
+
+    prev_marker = -1
+    for m, marker in optimal_pk_markers:
+        if marker != prev_marker:
+            RPR_ShowConsoleMsg(f'Place marker {marker} at measure {m}\n')
+        prev_marker = marker
 
 
 def startup():
