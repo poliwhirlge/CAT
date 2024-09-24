@@ -1,6 +1,7 @@
 # -*- coding: cp1252 -*-
 # -*- additions by: Alternity, kueller -*-
 from reaper_python import *
+from collections import namedtuple
 import traceback
 import operator
 import decimal
@@ -768,6 +769,9 @@ def process_instrument(instrument):  # Creates an array of all notes/events
     return array_instrument
 
 
+Note = namedtuple('Note', ['is_selected', 'tick', 'pitch', 'velocity', 'duration', 'note_on_off_channel'])
+
+
 def create_notes_array(notes):  # instrument is the instrument shortname, NOT the instrument track number
     array_rawnotes = []  # An array containing only notes in raw format, notes on and off
     array_rawevents = []  # An array containing all text markers/events
@@ -798,7 +802,7 @@ def create_notes_array(notes):  # instrument is the instrument shortname, NOT th
                     # We have the note off for the current note on event
                     # PM(str(note_bit[0])+ str(note_bit[1])+str(note_bit[3])+str(note_bit[4])+ str(int(cur_note[1])-int(note_bit[1]))+ str(note_bit[2]))
                     # PM("\n")
-                    array_notes.append([note_bit[0], int(note_bit[1]), int(note_bit[3]), note_bit[4], (int(cur_note[1]) - int(note_bit[1])), note_bit[2]])
+                    array_notes.append(Note(note_bit[0], int(note_bit[1]), int(note_bit[3]), note_bit[4], (int(cur_note[1]) - int(note_bit[1])), note_bit[2]))
                     break
     PM("loop 2")
     PM("\n")
@@ -3690,6 +3694,43 @@ def copy_od_solo():
     write_midi(instrument, [array_notesevents[0], array_notesevents[1]], end_part, start_part)
 
 
+def copy_vocal_markers():
+    track_id = tracks_array['PART VOCALS']
+    _, array_instrument_notes, end_part, start_part = process_instrument(track_id)
+    array_notes, array_events = create_notes_array(array_instrument_notes)
+
+    instrumentname = ''
+
+    for instrument_name, instrument_id in tracks_array.items():
+        if instrument_id == track_id:
+            instrumentname = instrument_name
+
+    notes_dict = notesname_array[notesname_instruments_array[instrumentname]]
+
+    RPR_ShowConsoleMsg(f'# Notes: {len(array_notes)}\n')
+    note: Note
+    array_notes = [note for note in array_notes if notes_dict[note.pitch][0] != 'Overdrive' and notes_dict[note.pitch][0] != 'Phrase Marker']
+    RPR_ShowConsoleMsg(f'# Notes after phrase markers removed: {len(array_notes)}\n')
+
+    instrument_b = tracks_array['HARM1']
+    array_instrument_data = process_instrument(instrument_b)
+    array_instrument_notes = array_instrument_data[1]
+    array_notes_b, array_events_b = create_notes_array(array_instrument_notes)
+
+    instrumentname = ''
+
+    for instrument_name, instrument_id in tracks_array.items():
+        if instrument_id == instrument_b:
+            instrumentname = instrument_name
+
+    notes_dict = notesname_array[notesname_instruments_array[instrumentname]]
+
+    array_notes = array_notes + [note for note in array_notes_b if notes_dict[note.pitch][0] == 'Overdrive' or notes_dict[note.pitch][0] == 'Phrase Marker']
+    RPR_ShowConsoleMsg(f'# Notes after phrase markers re-added: {len(array_notes)}\n')
+
+    write_midi(track_id, [array_notes, array_events], end_part, start_part)
+
+
 def add_slides(instrument, selected):
     # Loop through all vocal notes
     # For every note, look through the events array for a lyric
@@ -5864,9 +5905,11 @@ def gpimport_drums(instrument, notedata, GPnotes, offset):
 
 def generate_pro_keys_range_markers():
     track_id = tracks_array['PART REAL_KEYS_X']
-    array_instrument_data = process_instrument(track_id)
-    array_instrument_notes = array_instrument_data[1]
+    _, array_instrument_notes, end_part, start_part = process_instrument(track_id)
     array_notes, array_events = create_notes_array(array_instrument_notes)
+
+    notes_dict = notesname_array['VOCALS']
+
     RPR_ShowConsoleMsg(f'Array notes: {array_notes}\n\n')
     RPR_ShowConsoleMsg(f'Array events: {array_events}\n\n')
     RPR_ShowConsoleMsg(f'Measures array: {measures_array}\n\n')
@@ -5924,12 +5967,20 @@ def generate_pro_keys_range_markers():
     cost, reversed_path = fn(0, (-1, -1))
     optimal_pk_markers = list(zip([measure for measure, _ in note_ranges], [pk_range_to_marker[r] for r in reversed(reversed_path)]))
 
+    # Filter out existing phrase markers
+    note: Note
+    n_before = len(array_notes)
+    array_notes = [note for note in array_notes if note.pitch > 9]
+    RPR_ShowConsoleMsg(f'Removed {len(array_notes) - n_before} existing range marker notes.\n')
+
     prev_marker = -1
     for m, marker in optimal_pk_markers:
         if marker != prev_marker:
-            RPR_ShowConsoleMsg(f'Place marker {marker} at measure {m}\n')
+            RPR_ShowConsoleMsg(f'Placing marker {marker} at measure {m}\n')
+            array_notes.append(Note('E', measures_array[m - 1][1], marker, '60', 480/4, '90'))
         prev_marker = marker
 
+    write_midi(track_id, [array_notes, array_events], end_part, start_part)
 
 def startup():
     global instrument_ticks

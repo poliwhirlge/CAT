@@ -73,13 +73,11 @@ def execute_this(function):
         subwindow.launch()
 
 
-class GenerateProKeysRangeMarkers:
-    @staticmethod
-    def launch():
-        global root
-        root.destroy()
-        C3toolbox.startup()
-        C3toolbox.generate_pro_keys_range_markers()
+def launch(function):
+    global root
+    root.destroy()
+    C3toolbox.startup()
+    function()
 
 
 def RunCARV():
@@ -228,6 +226,9 @@ if __name__ == '__main__':
     createSingBtn = tkinter.Button(secVocals, text="Create sing-a-long notes", command=lambda: execute_this('create_singalong'))
     createSingBtn.grid(row=4, column=3, rowspan=1, sticky="WE", padx=5, pady=2)
 
+    button = tkinter.Button(secVocals, text="Copy markers from HARM1 to PART VOCALS", command=lambda: launch(C3toolbox.copy_vocal_markers))
+    button.grid(row=4, column=4, rowspan=1, sticky="WE", padx=5, pady=2)
+
     secSupersets = tkinter.LabelFrame(root, text=" Supersets: ")
     secSupersets.grid(row=4, columnspan=5, sticky='WE', padx=5, pady=5, ipadx=5, ipady=5)
 
@@ -264,7 +265,7 @@ if __name__ == '__main__':
     sec_pro_keys = tkinter.LabelFrame(root, text=' Pro Keys: ')
     sec_pro_keys.grid(row=6, columnspan=5, sticky='WE', padx=5, pady=5, ipadx=5, ipady=5)
 
-    generate_pro_keys_ranges = tkinter.Button(sec_pro_keys, text="Generate Pro Keys Range Markers", command=lambda: GenerateProKeysRangeMarkers.launch())
+    generate_pro_keys_ranges = tkinter.Button(sec_pro_keys, text="Generate Pro Keys Range Markers", command=lambda: launch(C3toolbox.generate_pro_keys_range_markers))
     generate_pro_keys_ranges.grid(row=1, column=1, rowspan=1, sticky="WE", padx=5, pady=2)
 
     secValidation = tkinter.LabelFrame(root, text=" Validation: ")
