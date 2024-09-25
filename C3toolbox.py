@@ -5942,36 +5942,52 @@ def generate_pro_keys_range_markers():
     primary_pk_ranges = [pk_range for pk_range, note in pk_range_to_marker.items() if note in [1, 5, 9]]
     all_pk_ranges = [pk_range for pk_range, note in pk_range_to_marker.items()]
 
-    solution_cache = {}
+    def find_range_shifts(primary_ranges_only: bool = True):
+        solution_cache = {}
+        no_solution = False
+        valid_pk_ranges = primary_pk_ranges if primary_ranges_only else all_pk_ranges
 
-    def fn(idx, curr_range):
-        key = f'{idx} {curr_range}'
-        if key in solution_cache:
+        def fn(idx, curr_range):
+            nonlocal no_solution
+            if no_solution:
+                return [0, []]
+
+            key = f'{idx} {curr_range}'
+            if key in solution_cache:
+                return solution_cache[key]
+            if idx >= len(note_ranges):
+                return [0, []]
+            measure, [lowest_note, highest_note] = note_ranges[idx]
+
+            valid_ranges = [(l, h) for l, h in valid_pk_ranges if (l <= lowest_note <= highest_note <= h)]
+            if len(valid_ranges) == 0:
+                RPR_ShowConsoleMsg(f'No solutions due to measure {measure} with range {lowest_note}-{highest_note}\n')
+                no_solution = True
+                return [0, []]
+
+            temp = [[cost + (0 if r[0] == curr_range[0] and r[1] == curr_range[1] else 1), path + [r]] for [cost, path], r in [[fn(idx + 1, r), r] for r in valid_ranges]]
+
+            solution_cache[key] = min(temp, key=lambda t: t[0])
             return solution_cache[key]
-        if idx >= len(note_ranges):
-            return [0, []]
-        measure, [lowest_note, highest_note] = note_ranges[idx]
 
-        valid_ranges = [(l, h) for l, h in all_pk_ranges if (l <= lowest_note <= highest_note <= h)]
-        if len(valid_ranges) == 0:
-            RPR_ShowConsoleMsg(f'No solutions due to measure {measure} with range {lowest_note}-{highest_note}\n')
-            solution_cache[key] = [0, []]
-            return [0, []]
+        cost, reversed_path = fn(0, (-1, -1))
+        optimal_pk_markers = list(zip([measure for measure, _ in note_ranges], [pk_range_to_marker[r] for r in reversed(reversed_path)]))
+        return None if no_solution else optimal_pk_markers
 
-        temp = [[cost + (0 if r[0] == curr_range[0] and r[1] == curr_range[1] else 1), path + [r]] for [cost, path], r in [[fn(idx + 1, r), r] for r in valid_ranges]]
+    optimal_pk_markers = find_range_shifts(True)
+    if optimal_pk_markers is None:
+        RPR_ShowConsoleMsg(f'No solution found with only primary ranges, trying to solve allowing all ranges.\n')
+        optimal_pk_markers = find_range_shifts(False)
 
-        solution_cache[key] = min(temp, key=lambda t: t[0])
-
-        return min(temp)
-
-    cost, reversed_path = fn(0, (-1, -1))
-    optimal_pk_markers = list(zip([measure for measure, _ in note_ranges], [pk_range_to_marker[r] for r in reversed(reversed_path)]))
+    if optimal_pk_markers is None:
+        RPR_ShowConsoleMsg(f'No solution found, aborting.\n')
+        return
 
     # Filter out existing phrase markers
     note: Note
     n_before = len(array_notes)
     array_notes = [note for note in array_notes if note.pitch > 9]
-    RPR_ShowConsoleMsg(f'Removed {len(array_notes) - n_before} existing range marker notes.\n')
+    RPR_ShowConsoleMsg(f'Removed {n_before - len(array_notes)} existing range marker notes.\n')
 
     prev_marker = -1
     for m, marker in optimal_pk_markers:
