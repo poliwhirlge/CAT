@@ -1,6 +1,7 @@
 # -*- coding: cp1252 -*-
 # -*- additions by: Alternity, kueller -*-
 from reaper_python import *
+from C3notes import *
 from collections import namedtuple
 import traceback
 import operator
@@ -39,7 +40,8 @@ reaper_console = ReaperConsole()
 sys.stderr = reaper_console
 console_log = RPR_ShowConsoleMsg
 
-from C3notes import *
+Note = namedtuple('Note', ['is_selected', 'tick', 'pitch', 'velocity', 'duration', 'note_on_off_channel'])
+Measure = namedtuple('Measure', ['measure_idx', 'tick_at_start', 'ts_den', 'ts_num', 'ticks_per_beat', 'bpm'])
 
 ###########################################################
 #
@@ -47,7 +49,7 @@ from C3notes import *
 #
 ###########################################################
 correct_tqn = 480  # We take the TQN from the Reaper project but Magma wants 480 TQN.
-# This array keeps track of the each track's ID. It HAS to be run every time a function is run because the user can change track's position, thus changing ID
+# This array keeps track of each track's ID. It HAS to be run every time a function is run because the user can change track's position, thus changing ID
 tracks_array = {"PART DRUMS": 999,
                 "PART GUITAR": 999,
                 "PART BASS": 999,
@@ -72,6 +74,7 @@ tracks_array = {"PART DRUMS": 999,
                 "PART REAL_BASS": 999,
                 "PART REAL_BASS_22": 999
                 }
+measures_array: [Measure]
 array_instruments = {
     "Drums": "PART DRUMS",
     "2x Drums": "PART DRUMS 2X",
@@ -701,6 +704,8 @@ def get_time_signatures(instrument_ticks):
         # PM("\n")
         PM("returning...")
         PM("\n")
+
+        measures_array = [Measure(*m) for m in measures_array]
         return measures_array
 
 
@@ -767,9 +772,6 @@ def process_instrument(instrument):  # Creates an array of all notes/events
     end_of_track = notes_array[-1]
 
     return array_instrument
-
-
-Note = namedtuple('Note', ['is_selected', 'tick', 'pitch', 'velocity', 'duration', 'note_on_off_channel'])
 
 
 def create_notes_array(notes):  # instrument is the instrument shortname, NOT the instrument track number
@@ -5908,11 +5910,8 @@ def generate_pro_keys_range_markers():
     _, array_instrument_notes, end_part, start_part = process_instrument(track_id)
     array_notes, array_events = create_notes_array(array_instrument_notes)
 
-    notes_dict = notesname_array['VOCALS']
+    RPR_ShowConsoleMsg(f'Measures array: {measures_array}\n')
 
-    RPR_ShowConsoleMsg(f'Array notes: {array_notes}\n\n')
-    RPR_ShowConsoleMsg(f'Array events: {array_events}\n\n')
-    RPR_ShowConsoleMsg(f'Measures array: {measures_array}\n\n')
     keys_high, keys_low = 72, 48
     note_range_by_measure = {}
 
@@ -5944,14 +5943,9 @@ def generate_pro_keys_range_markers():
 
     def find_range_shifts(primary_ranges_only: bool = True):
         solution_cache = {}
-        no_solution = False
         valid_pk_ranges = primary_pk_ranges if primary_ranges_only else all_pk_ranges
 
         def fn(idx, curr_range):
-            nonlocal no_solution
-            if no_solution:
-                return [0, []]
-
             key = f'{idx} {curr_range}'
             if key in solution_cache:
                 return solution_cache[key]
@@ -5962,17 +5956,20 @@ def generate_pro_keys_range_markers():
             valid_ranges = [(l, h) for l, h in valid_pk_ranges if (l <= lowest_note <= highest_note <= h)]
             if len(valid_ranges) == 0:
                 RPR_ShowConsoleMsg(f'No solutions due to measure {measure} with range {lowest_note}-{highest_note}\n')
-                no_solution = True
-                return [0, []]
+                raise ValueError(f'No solutions due to measure {measure} with range {lowest_note}-{highest_note}\n')
 
             temp = [[cost + (0 if r[0] == curr_range[0] and r[1] == curr_range[1] else 1), path + [r]] for [cost, path], r in [[fn(idx + 1, r), r] for r in valid_ranges]]
 
             solution_cache[key] = min(temp, key=lambda t: t[0])
             return solution_cache[key]
 
-        cost, reversed_path = fn(0, (-1, -1))
+        try:
+            cost, reversed_path = fn(0, (-1, -1))
+        except ValueError:
+            return None
+
         optimal_pk_markers = list(zip([measure for measure, _ in note_ranges], [pk_range_to_marker[r] for r in reversed(reversed_path)]))
-        return None if no_solution else optimal_pk_markers
+        return optimal_pk_markers
 
     optimal_pk_markers = find_range_shifts(True)
     if optimal_pk_markers is None:
@@ -5993,13 +5990,13 @@ def generate_pro_keys_range_markers():
     for m, marker in optimal_pk_markers:
         if marker != prev_marker:
             RPR_ShowConsoleMsg(f'Placing marker {marker} at measure {m}\n')
-            array_notes.append(Note('E', measures_array[m - 1][1], marker, '60', 480/4, '90'))
+            array_notes.append(Note('E', measures_array[m - 1].tick_at_start, marker, '60', 480/4, '90'))
         prev_marker = marker
 
     write_midi(track_id, [array_notes, array_events], end_part, start_part)
 
+
 def startup():
-    global instrument_ticks
     global measures_array
     global tracks_array
     global config
