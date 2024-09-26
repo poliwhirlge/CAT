@@ -109,8 +109,8 @@ from collections import Counter
 from configparser import ConfigParser
 from reaper_python import *
 from reaper_python import RPR_ShowConsoleMsg as console_msg
-from render_html import write_html_output
-from util import TimeSignature, TimeSignatureChange, TimeSignatureMap
+from CARV.render_html import write_html_output
+from CARV.util import TimeSignature, TimeSignatureChange, TimeSignatureMap
 import importlib
 import codecs
 
@@ -119,9 +119,9 @@ console_msg("")
 
 # (start) Config section
 parser = ConfigParser()
-parser.read(os.path.join(sys.path[0], "rbn_config.ini"))
-OUTPUT_FILE = os.path.join(sys.path[0], "debug/debug_file.txt")
-OUTPUT_HTML_FILE = os.path.join(sys.path[0], "output/results.html")
+parser.read(os.path.join(sys.path[0], "CARV/rbn_config.ini"))
+OUTPUT_FILE = os.path.join(sys.path[0], "CARV/debug/debug_file.txt")
+OUTPUT_HTML_FILE = os.path.join(sys.path[0], "CARV/output/results.html")
 CONST_TOM_MARKERS = parser.getboolean('DRUMS', 'tom_markers_warnings')
 CONST_DEBUG_EXTRA = parser.getboolean('DEBUG', 'low_level')
 CONST_DEBUG = parser.getboolean('DEBUG', 'high_level')

@@ -83,10 +83,7 @@ def launch(function):
 def RunCARV():
     global root
     root.destroy()
-
-    tempDirectory = (str(sys.path[0]) + "/CARV")
-    sys.path.insert(0, tempDirectory)
-    import RBNCheck
+    import CARV.RBNCheck
 
 
 if __name__ == '__main__':
