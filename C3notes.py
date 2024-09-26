@@ -1,11 +1,3 @@
-from reaper_python import *
-
-global notesname_array
-###########################################################
-#
-# GLOBALS
-#
-###########################################################
 notesname_instruments_array = {
     "PART DRUMS": "DRUMS",
     "PART GUITAR": "5LANES",

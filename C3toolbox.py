@@ -2,7 +2,7 @@
 # -*- additions by: Alternity, kueller -*-
 from reaper_python import *
 from C3notes import *
-from collections import namedtuple
+from cat_commons import Note, Measure
 import traceback
 import operator
 import decimal
@@ -11,7 +11,6 @@ import math
 import binascii
 import os
 import re
-import sys
 import codecs
 import sys
 
@@ -40,8 +39,6 @@ reaper_console = ReaperConsole()
 sys.stderr = reaper_console
 console_log = RPR_ShowConsoleMsg
 
-Note = namedtuple('Note', ['is_selected', 'tick', 'pitch', 'velocity', 'duration', 'note_on_off_channel'])
-Measure = namedtuple('Measure', ['measure_idx', 'tick_at_start', 'ts_den', 'ts_num', 'ticks_per_beat', 'bpm'])
 
 ###########################################################
 #
@@ -216,14 +213,6 @@ def PM(message):
             RPR_ShowConsoleMsg(str(message))
         else:
             RPR_ShowConsoleMsg("PM: Empty string caught")
-
-
-def log(function, var):
-    # This function logs all functions and variables passed
-    # if config['log'] == '1':
-    # with open ("log.txt", "a") as myfile:
-    # myfile.write("appended text")
-    a = 5
 
 
 def exit_exception(exception):
@@ -633,7 +622,7 @@ def get_time_signatures(instrument_ticks):
                 ticks_start = float((timesigchanges_array[x - 1][3]) + (j * ticks_per_measure))
                 ticks_start = round(ticks_start, 0)
                 ticks_start = int(ticks_start)
-                measures_array.append([m, ticks_start, timesigchanges_array[x - 1][1], timesigchanges_array[x - 1][2], divider])
+                measures_array.append(Measure(m, ticks_start, timesigchanges_array[x - 1][1], timesigchanges_array[x - 1][2], divider, bpm=0))
 
         PM(f"measures_array len: {len(measures_array)}\n")
 
@@ -674,7 +663,7 @@ def get_time_signatures(instrument_ticks):
             m += 1
             ticks_startmeasure = ticks_start + (ticks * loop_measure)
             loop_measure += 1
-            measures_array.append([m, ticks_startmeasure, timesigchanges_array[x][1], timesigchanges_array[x][2], ticks_per_measure])
+            measures_array.append(Measure(m, ticks_startmeasure, timesigchanges_array[x][1], timesigchanges_array[x][2], ticks_per_measure, bpm=0))
         # Now we add the BPM for each measure taking the BPM value of the measure from nodes_array
         ok = 0
 
@@ -692,12 +681,12 @@ def get_time_signatures(instrument_ticks):
                 # PM("\n")
                 # PM(str(int(round(float(ticks_start), 0)))+" <= "+str(int(float(nodes_array[j][4])))+" : "+str(nodes_array[j][1]))
                 if int(round(float(ticks_start), 0)) >= int(float(nodes_array[j][4])):
-                    measures_array[x].append(nodes_array[j][1])
+                    measures_array[x].bpm = nodes_array[j][1]
                     ok = 1
                     # PM("\n")
                     break
             if ok == 0:
-                measures_array[x].append(nodes_array[j][1])
+                measures_array[x].bpm = nodes_array[j][1]
                 ok = 0
         # PM("\n")
         # PM(measures_array)
@@ -705,7 +694,6 @@ def get_time_signatures(instrument_ticks):
         PM("returning...")
         PM("\n")
 
-        measures_array = [Measure(*m) for m in measures_array]
         return measures_array
 
 
@@ -5933,12 +5921,13 @@ def generate_pro_keys_range_markers():
             update_note_ranges_cache(m - 1, midi_note)  # must be in range at least 1 measure earlier
         except Exception as e:
             RPR_ShowConsoleMsg(f'Problem with note: {note}\n\n')
+            RPR_ShowConsoleMsg(f'Exception: {traceback.format_exc()}\n\n')
 
     note_ranges = [[k, v] for k, v in sorted(note_range_by_measure.items(), key=lambda item: item[0])]
 
     pk_range_to_marker = {(48, 64): 0, (53, 69): 5, (57, 72): 9,
                           (50, 65): 2, (52, 67): 4, (55, 71): 7}
-    primary_pk_ranges = [pk_range for pk_range, note in pk_range_to_marker.items() if note in [1, 5, 9]]
+    primary_pk_ranges = [pk_range for pk_range, note in pk_range_to_marker.items() if note in [0, 5, 9]]
     all_pk_ranges = [pk_range for pk_range, note in pk_range_to_marker.items()]
 
     def find_range_shifts(primary_ranges_only: bool = True):
@@ -5987,11 +5976,11 @@ def generate_pro_keys_range_markers():
     RPR_ShowConsoleMsg(f'Removed {n_before - len(array_notes)} existing range marker notes.\n')
 
     prev_marker = -1
-    for m, marker in optimal_pk_markers:
-        if marker != prev_marker:
-            RPR_ShowConsoleMsg(f'Placing marker {marker} at measure {m}\n')
-            array_notes.append(Note('E', measures_array[m - 1].tick_at_start, marker, '60', 480/4, '90'))
-        prev_marker = marker
+    for measure_idx, marker_note in optimal_pk_markers:
+        if marker_note != prev_marker:
+            RPR_ShowConsoleMsg(f'Placing marker {marker_note} at measure {measure_idx}\n')
+            array_notes.append(Note(tick=measures_array[measure_idx - 1].tick_at_start, pitch=marker_note, duration=120))
+        prev_marker = marker_note
 
     write_midi(track_id, [array_notes, array_events], end_part, start_part)
 
