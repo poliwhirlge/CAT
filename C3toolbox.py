@@ -5918,17 +5918,14 @@ def generate_pro_keys_range_markers():
             note_range_by_measure[m] = [min(current_min, midi_note), max(current_max, midi_note)]
 
     for note in array_notes:
-        try:
-            select_status, tick, midi_note, velocity, duration, note_on_off_channel = note
-            if not keys_low <= midi_note <= keys_high:
-                continue
+        select_status, tick, midi_note, velocity, duration, note_on_off_channel = note
+        if not keys_low <= midi_note <= keys_high:
+            continue
 
-            m, b, t, relative_position = mbt(tick)
+        m_start, *_ = mbt(tick)
+        m_end, *_ = mbt(tick + duration)
+        for m in range(m_start - 1, m_end + 1):  # must be in range at least 1 measure earlier
             update_note_ranges_cache(m, midi_note)
-            update_note_ranges_cache(m - 1, midi_note)  # must be in range at least 1 measure earlier
-        except Exception as e:
-            RPR_ShowConsoleMsg(f'Problem with note: {note}\n\n')
-            RPR_ShowConsoleMsg(f'Exception: {traceback.format_exc()}\n\n')
 
     note_ranges = [[k, v] for k, v in sorted(note_range_by_measure.items(), key=lambda item: item[0])]
 
