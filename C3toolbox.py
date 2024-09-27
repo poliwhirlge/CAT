@@ -2,7 +2,7 @@
 # -*- additions by: Alternity, kueller -*-
 from reaper_python import *
 from C3notes import *
-from cat_commons import Note, Measure
+from cat_commons import Note, Measure, MidiEvent
 import traceback
 import operator
 import decimal
@@ -13,6 +13,7 @@ import os
 import re
 import codecs
 import sys
+from parsing.parse_reaper_project import get_track_id_map
 
 import reaper_python as rpy
 
@@ -38,7 +39,6 @@ reaper_console = ReaperConsole()
 
 sys.stderr = reaper_console
 console_log = RPR_ShowConsoleMsg
-
 
 ###########################################################
 #
@@ -180,7 +180,7 @@ double_pedal_bpm = 120  # The threshold under which we allow 1/16th kick notes o
 maxlen = 1048576  # Used for the MIDI chunk editing and other functions
 end_event = 0  # If no end_event is set or it's not set at the right position, looping through notes after the end_event will bring up an error
 default_pause = correct_tqn * 4 * 3  # The default space between notes that triggers an idle event
-chord_threshold = 0.07  # 7% is the defauly threshold for chords reduction
+chord_threshold = 0.07  # 7% is the default threshold for chords reduction
 invalid_chars = ',:;"'
 phrase_char = '@'  # The character we use to tell the phrase markers script to start a new phrase
 debug = 1
@@ -204,11 +204,17 @@ debug = 1
 # UTILITIES
 #
 ###########################################################
+path = os.path.join(sys.path[0], "cat.ini")
+with open(path, 'r') as f:
+    config = {}
+    for line in f:
+        k, v = line.strip().split('=')
+        config[k.strip()] = v.strip()
+is_debug = (config['debug'] == '1') if 'debug' in config else False
+
 
 def PM(message):
-    global config
-
-    if config['debug'] == '1':
+    if is_debug:
         if message != "":
             RPR_ShowConsoleMsg(str(message))
         else:
@@ -558,6 +564,9 @@ def get_time_signatures(instrument_ticks):
     # decimal.Decimal(ticks_passed)
     ticks_passed = 0
 
+    if len(nodes_array) == 0:
+        return []
+
     if len(nodes_array) > 0:
         old_ts = str(nodes_array[0][2]) + str(nodes_array[0][3])
         timesigchanges_array.append([nodes_array[0][0], nodes_array[0][2], nodes_array[0][3], 0])
@@ -703,8 +712,7 @@ def process_instrument(instrument):  # Creates an array of all notes/events
     global end_of_track
     mi = RPR_GetMediaItem(0, instrument)
     chunk = ""
-    maxlen = 1048576
-    (boolvar, mi, chunk, maxlen) = RPR_GetSetItemState(mi, chunk, maxlen)
+    boolvar, mi, chunk, _ = RPR_GetSetItemState(mi, chunk, maxlen)
     # PM(chunk)
     vars_array = ""
     notes_array = []
@@ -765,9 +773,9 @@ def process_instrument(instrument):  # Creates an array of all notes/events
 def create_notes_array(notes):  # instrument is the instrument shortname, NOT the instrument track number
     array_rawnotes = []  # An array containing only notes in raw format, notes on and off
     array_rawevents = []  # An array containing all text markers/events
-    array_notes = []  # An array containing only notes, with:
+    array_notes: [Note] = []  # An array containing only notes, with:
     # 0. 'E' or 'e' (unselected or selected), 1. location, 2. pitch, 3. velocity, 4. duration, 5. noteonoffchannel
-    array_events = []  # An array containing only text markers/events
+    array_events: [MidiEvent] = []  # An array containing only text markers/events
     # First off we sort the notes from the markers, so it's easier to loop through notes
     PM("create_notes_array start\n")
     PM(f"len: {len(notes)}\n")
@@ -821,7 +829,7 @@ def create_notes_array(notes):  # instrument is the instrument shortname, NOT th
         lyric = lyric[2:]
         lyric = codecs.decode(lyric, 'utf-8')
         PM(f"- 4.2: {lyric}\n")
-        array_events.append([note_bit[0], int(note_bit[1]), note_bit[2], str(lyric), note_bit[4], event_header])
+        array_events.append(MidiEvent(note_bit[0], int(note_bit[1]), note_bit[2], str(lyric), note_bit[4], event_header))
         PM(f"- 5: {[note_bit[0], int(note_bit[1]), note_bit[2], str(lyric), note_bit[4], event_header]}")
         PM("\n")
 
@@ -1022,6 +1030,7 @@ def prep_tracks():
             instrument = "???"
     PM("\ntracks_array:\n")
     PM(tracks_array)
+    return tracks_array
 
 
 def write_midi(instrument, array, end_part, start_part):
@@ -5898,8 +5907,6 @@ def generate_pro_keys_range_markers():
     _, array_instrument_notes, end_part, start_part = process_instrument(track_id)
     array_notes, array_events = create_notes_array(array_instrument_notes)
 
-    RPR_ShowConsoleMsg(f'Measures array: {measures_array}\n')
-
     keys_high, keys_low = 72, 48
     note_range_by_measure = {}
 
@@ -5988,58 +5995,34 @@ def generate_pro_keys_range_markers():
 def startup():
     global measures_array
     global tracks_array
-    global config
-
-    path = os.path.join(sys.path[0], "cat.ini")
-    f = open(path, 'r')
-    config = {}
-    for line in f:
-        k, v = line.strip().split('=')
-        config[k.strip()] = v.strip()
-    f.close()
-
-    PM("Config read")
-    PM("\n")
 
     try:
-        prep_tracks()
+        track_name_to_id = get_track_id_map()
+        tracks_array = track_name_to_id  # set global variable for compatibility
     except UnicodeDecodeError:
-
-        RPR_MB("Unicode Error caught." \
-               "\n\nPlease screenshot this error and report it. \n\n"
-               + str(traceback.format_exc()),
-               "Unicode Error", 0)
+        RPR_MB(f'Unicode Error caught.\n\nPlease screenshot this error and report it.\n\n{traceback.format_exc()}', "Unicode Error", 0)
         raise
 
     PM("Tracks Prepped")
     PM("\n")
 
     # We start off getting the end event and the instrument ticks
-    array_instrument_data = process_instrument(tracks_array["EVENTS"])  # This toggles the processing of the EVENTS chunk that sets end_event
+    array_instrument_data = process_instrument(track_name_to_id["EVENTS"])  # This toggles the processing of the EVENTS chunk that sets end_event
+
+    ticks, notes_array, end_firstpart, start_secondpart = array_instrument_data
+    array_notes, array_events = create_notes_array(notes_array)
+    # global vars
+    end_events = [e for e in array_events if e.event_text == '[end]']
+    temp_end_event = end_events[0].tick if len(end_events) == 1 else 0
+    temp_end_of_track = notes_array[-1]
+
     PM("process_instrument")
     PM("\n")
     instrument_ticks = array_instrument_data[0]  # Number of ticks per measure of the instrument
     measures_array = get_time_signatures(instrument_ticks)  # Let's create the array with all measures with BPM, ticks and time signatures
     PM("get_time_signatures")
     PM("\n")
-    if isinstance(measures_array, list) == False:
-        result = RPR_MB("No time markers found, aborting", "Invalid tempo map", 0)
-        return
 
-###########################################################
-
-###########################################################
-#
-# EXTERNAL COMMANDS
-#
-###########################################################
-
-
-# PM("\nMeasures:\n")
-# PM(measures_array)
-# instrument_dialogbox()
-# PM(str(end_part)+" - "+str(start_part))
-# PM(vars_array_string)
-# PM(notestring)
-# PM(array_instrument_notes)
-# PM(str(instrument_ticks))
+    if len(measures_array) == 0:
+        RPR_MB("No time markers found, aborting", "Invalid tempo map", 0)
+        raise Exception("No time markers found, aborting.")

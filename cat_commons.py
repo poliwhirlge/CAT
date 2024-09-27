@@ -1,11 +1,11 @@
+from enum import Enum
+from typing import List
+
 
 class Note:
     def __init__(self, is_selected: str = 'E', tick: int = 0, pitch: int = 0, velocity: str = '60', duration: int = 0, note_on_off_channel: str = '90'):
         if isinstance(is_selected, bool):
-            if is_selected:
-                self.is_selected = 'e'
-            else:
-                self.is_selected = 'E'
+            self.is_selected = 'e' if is_selected else 'E'
         else:
             if is_selected not in ['e', 'E']:
                 raise ValueError(f'Invalid is_selected attribute in Note object, must be \'e\' or \'E\'')
@@ -62,10 +62,80 @@ class Note:
         return iter((self.is_selected, self.tick, self.pitch, self.velocity, self.duration, self.note_on_off_channel))
 
     def __repr__(self):
-        return f'[Note {self.pitch}@{self.tick}]'
+        return f'NOTE [Pitch:{self.pitch}, Tick:{self.tick}]'
 
-    def is_selected(self):
-        return
+
+class MidiEventType(Enum):
+    TEXT_MARKER = 'ff01'
+    TRACK_NAME = 'ff03'
+    LYRICS = 'ff05'
+
+
+class MidiEvent:
+    def __init__(self, is_selected: str = '<X', tick: int = 0, pre_text: str = '0', event_text: str = '', post_text: str = '>', event_type_code: str = 'ff01'):
+        if isinstance(is_selected, bool):
+            self.is_selected = '<x' if is_selected else '<X'
+        else:
+            if is_selected not in ['<x', '<X']:
+                raise ValueError(f'Invalid is_selected attribute in MidiEvent object, must be \'<x\' or \'<X\', not {is_selected}')
+            self.is_selected = is_selected
+        self.tick = tick
+        self.pre_text = pre_text
+        self.event_text = event_text
+        self.post_text = post_text
+        try:
+            self.event_type_code = event_type_code
+            MidiEventType(event_type_code)
+        except Exception as e:
+            raise ValueError(f'Invalid MidiEvent type code: {event_type_code}')
+
+    def __getitem__(self, item):
+        if isinstance(item, slice):
+            raise TypeError('MidiEvent object is unsliceable')
+        if not isinstance(item, int):
+            raise ValueError(f'Invalid index: {item}')
+        if 6 <= item < 0:
+            raise ValueError(f'Invalid index: {item}')
+        if item == 0:
+            return self.is_selected
+        elif item == 1:
+            return self.tick
+        elif item == 2:
+            return self.pre_text
+        elif item == 3:
+            return self.event_text
+        elif item == 4:
+            return self.post_text
+        elif item == 5:
+            return self.event_type_code
+        return None
+
+    def __setitem__(self, key, value):
+        if isinstance(key, slice):
+            raise TypeError('MidiEvent object is unsliceable')
+        if not isinstance(key, int):
+            raise ValueError(f'Invalid index: {key}')
+        if 6 <= key < 0:
+            raise ValueError(f'Invalid index: {key}')
+        if key == 0:
+            self.is_selected = value
+        elif key == 1:
+            self.tick = value
+        elif key == 2:
+            self.pre_text = value
+        elif key == 3:
+            self.event_text = value
+        elif key == 4:
+            self.post_text = value
+        elif key == 5:
+            self.event_type_code = value
+        return None
+
+    def get_midi_event_type(self) -> MidiEventType:
+        return MidiEventType(self.event_type_code)
+
+    def __repr__(self):
+        return f'EVENT [EventType: {self.get_midi_event_type().name}, Text: {self.event_text}, Tick:{self.tick}]'
 
 
 class Measure:
@@ -125,3 +195,18 @@ class Measure:
     def __repr__(self):
         return f'[Measure {self.measure_idx}@{self.tick_at_start} {self.ts_num}/{self.ts_den} {self.bpm}]'
 
+
+class MidiProject:
+    def __init__(self, track_id_map):
+        self.track_id_map = track_id_map
+
+
+class MidiTrack:
+    def __init__(self, track_name, notes: List[Note], events: List[MidiEvent], end_event_tick: int, end_of_track: str, end_first_part: int, start_second_part: int):
+        self.track_name = track_name
+        self.notes = notes
+        self.events = events
+        self.end_event_tick = end_event_tick
+        self.end_of_track = end_of_track
+        self.end_first_part = end_first_part
+        self.start_second_part = start_second_part
