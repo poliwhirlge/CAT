@@ -5973,18 +5973,35 @@ def generate_pro_keys_range_markers():
         RPR_ShowConsoleMsg(f'No solution found, aborting.\n')
         return
 
-    # Filter out existing phrase markers
+    # Remove out existing phrase markers
     note: Note
     n_before = len(array_notes)
     array_notes = [note for note in array_notes if note.pitch > 9]
     RPR_ShowConsoleMsg(f'Removed {n_before - len(array_notes)} existing range marker notes.\n')
 
+    # Filter down to markers that need to be placed
+    final_range_shifts = []
     prev_marker = -1
     for measure_idx, marker_note in optimal_pk_markers:
         if marker_note != prev_marker:
-            RPR_ShowConsoleMsg(f'Placing marker {marker_note} at measure {measure_idx}\n')
-            array_notes.append(Note(tick=measures_array[measure_idx - 1].tick_at_start, pitch=marker_note, duration=120))
+            final_range_shifts.append([measure_idx, marker_note])
         prev_marker = marker_note
+
+    # Try to move each marker to the earliest possible measure
+    for measure_idx, marker_note in final_range_shifts:
+        r_low, r_high = [k for k, v in pk_range_to_marker.items() if v == marker_note][0]
+
+        def in_range(m_idx, r_low, r_high):
+            if m_idx not in note_range_by_measure:
+                return True
+            low, high = note_range_by_measure[m_idx]
+            return r_low <= low and r_high >= high
+
+        while measure_idx > 1 and in_range(measure_idx - 1, r_low, r_high):
+            measure_idx -= 1
+
+        RPR_ShowConsoleMsg(f'Placing marker {marker_note} at measure {measure_idx}\n')
+        array_notes.append(Note(tick=measures_array[measure_idx - 1].tick_at_start, pitch=marker_note, duration=120))
 
     write_midi(track_id, [array_notes, array_events], end_part, start_part)
 
