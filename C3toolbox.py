@@ -2,7 +2,7 @@
 # -*- additions by: Alternity, kueller -*-
 from reaper_python import *
 from C3notes import *
-from cat_commons import Note, Measure, MidiEvent
+from cat_commons import Note, Measure, MidiEvent, MidiProject
 import traceback
 import operator
 import decimal
@@ -13,7 +13,7 @@ import os
 import re
 import codecs
 import sys
-from parsing.parse_reaper_project import get_track_id_map
+from parsing.parse_reaper_project import parse_project
 
 import reaper_python as rpy
 
@@ -47,30 +47,7 @@ console_log = RPR_ShowConsoleMsg
 ###########################################################
 correct_tqn = 480  # We take the TQN from the Reaper project but Magma wants 480 TQN.
 # This array keeps track of each track's ID. It HAS to be run every time a function is run because the user can change track's position, thus changing ID
-tracks_array = {"PART DRUMS": 999,
-                "PART GUITAR": 999,
-                "PART BASS": 999,
-                "PART VOCALS": 999,
-                "PART KEYS": 999,
-                "PART REAL_KEYS_X": 999,
-                "PART REAL_KEYS_H": 999,
-                "PART REAL_KEYS_M": 999,
-                "PART REAL_KEYS_E": 999,
-                "PART KEYS_ANIM_LH": 999,
-                "PART KEYS_ANIM_RH": 999,
-                "HARM1": 999,
-                "HARM2": 999,
-                "HARM3": 999,
-                "EVENTS": 999,
-                "BEAT": 999,
-                "PART DRUMS 2X": 999,
-                "VENUE": 999,
-                "PART RHYTHM": 999,
-                "PART REAL_GUITAR": 999,
-                "PART REAL_GUITAR_22": 999,
-                "PART REAL_BASS": 999,
-                "PART REAL_BASS_22": 999
-                }
+tracks_array: {str: int}
 measures_array: [Measure]
 array_instruments = {
     "Drums": "PART DRUMS",
@@ -6009,34 +5986,17 @@ def generate_pro_keys_range_markers():
 def startup():
     global measures_array
     global tracks_array
+    global end_event
+    global end_of_track
 
-    try:
-        track_name_to_id = get_track_id_map()
-        tracks_array = track_name_to_id  # set global variable for compatibility
-    except UnicodeDecodeError:
-        RPR_MB(f'Unicode Error caught.\n\nPlease screenshot this error and report it.\n\n{traceback.format_exc()}', "Unicode Error", 0)
-        raise
+    midi_project: MidiProject = parse_project()
 
-    PM("Tracks Prepped")
-    PM("\n")
+    tracks_array = midi_project.track_id_map
+    end_event = midi_project.end_event_tick
+    end_of_track = midi_project.end_of_track
 
-    # We start off getting the end event and the instrument ticks
-    array_instrument_data = process_instrument(track_name_to_id["EVENTS"])  # This toggles the processing of the EVENTS chunk that sets end_event
-
-    ticks, notes_array, end_firstpart, start_secondpart = array_instrument_data
-    array_notes, array_events = create_notes_array(notes_array)
-    # global vars
-    end_events = [e for e in array_events if e.event_text == '[end]']
-    temp_end_event = end_events[0].tick if len(end_events) == 1 else 0
-    temp_end_of_track = notes_array[-1]
-
-    PM("process_instrument")
-    PM("\n")
-    instrument_ticks = array_instrument_data[0]  # Number of ticks per measure of the instrument
-    measures_array = get_time_signatures(instrument_ticks)  # Let's create the array with all measures with BPM, ticks and time signatures
-    PM("get_time_signatures")
-    PM("\n")
-
+    measures_array = get_time_signatures(correct_tqn)
     if len(measures_array) == 0:
         RPR_MB("No time markers found, aborting", "Invalid tempo map", 0)
         raise Exception("No time markers found, aborting.")
+
