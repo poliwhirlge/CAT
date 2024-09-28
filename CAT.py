@@ -144,9 +144,6 @@ if __name__ == '__main__':
     reducepatternBtn = tkinter.Button(sec5lane, text="Reduce by pattern", command=lambda: execute_this('reduce_by_pattern'))
     reducepatternBtn.grid(row=3, column=1, columnspan=1, sticky="WE", padx=5, pady=2)
 
-    prokeysreduceBtn = tkinter.Button(sec5lane, text="Reduce pro keys note density based on 5-lane", command=lambda: execute_this('remove_notes_prokeys'))
-    prokeysreduceBtn.grid(row=3, column=2, columnspan=3, sticky="WE", padx=5, pady=2)
-
     secDrums = tkinter.LabelFrame(root, text=" Drums: ")
     secDrums.grid(row=2, columnspan=5, sticky='WE', padx=5, pady=5, ipadx=5, ipady=5)
 
@@ -264,6 +261,9 @@ if __name__ == '__main__':
 
     generate_pro_keys_ranges = tkinter.Button(sec_pro_keys, text="Generate Pro Keys Range Markers", command=lambda: launch(C3toolbox.generate_pro_keys_range_markers))
     generate_pro_keys_ranges.grid(row=1, column=1, rowspan=1, sticky="WE", padx=5, pady=2)
+
+    prokeysreduceBtn = tkinter.Button(sec_pro_keys, text="Reduce pro keys note density based on 5-lane", command=lambda: execute_this('remove_notes_prokeys'))
+    prokeysreduceBtn.grid(row=1, column=2, columnspan=3, sticky="WE", padx=5, pady=2)
 
     secValidation = tkinter.LabelFrame(root, text=" Validation: ")
     secValidation.grid(row=7, columnspan=5, sticky='WE', padx=5, pady=5, ipadx=5, ipady=5)
