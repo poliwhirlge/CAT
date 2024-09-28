@@ -195,18 +195,3 @@ class Measure:
     def __repr__(self):
         return f'[Measure {self.measure_idx}@{self.tick_at_start} {self.ts_num}/{self.ts_den} {self.bpm}]'
 
-
-class MidiProject:
-    def __init__(self, track_id_map, end_event_tick: int, end_of_track: str):
-        self.track_id_map = track_id_map
-        self.end_event_tick = end_event_tick  # tick of [end] event on EVENTS track
-        self.end_of_track = end_of_track  # end of track event in raw string form
-
-
-class MidiTrack:
-    def __init__(self, track_name, notes: List[Note], events: List[MidiEvent], end_first_part: int, start_second_part: int):
-        self.track_name = track_name
-        self.notes = notes
-        self.events = events
-        self.end_first_part = end_first_part
-        self.start_second_part = start_second_part

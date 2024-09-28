@@ -2,7 +2,7 @@
 # -*- additions by: Alternity, kueller -*-
 from reaper_python import *
 from C3notes import *
-from cat_commons import Note, Measure, MidiEvent, MidiProject
+from cat_commons import Note, Measure, MidiEvent
 import traceback
 import operator
 import decimal
@@ -13,7 +13,7 @@ import os
 import re
 import codecs
 import sys
-from parsing.parse_reaper_project import parse_project
+from parsing.parse_reaper_project import parse_project, MidiProject
 
 import reaper_python as rpy
 

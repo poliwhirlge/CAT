@@ -5,11 +5,41 @@ import traceback
 
 import C3notes
 from collections import defaultdict
+from typing import List
 from reaper_python import RPR_CountMediaItems, RPR_GetMediaItem, RPR_GetMediaItem_Track, RPR_GetSetMediaTrackInfo_String, RPR_GetSetItemState, RPR_ShowConsoleMsg, RPR_MB
-from cat_commons import MidiProject, MidiTrack, Note, MidiEvent
-
+from cat_commons import Note, MidiEvent
 
 max_len = 1048576
+
+
+class MidiTrack:
+    def __init__(self, track_name, notes: List[Note], events: List[MidiEvent], end_first_part: int, start_second_part: int):
+        self.track_name = track_name
+        self.notes = notes
+        self.events = events
+        self.end_first_part = end_first_part
+        self.start_second_part = start_second_part
+
+
+class MidiProject:
+    def __init__(self, track_id_map, end_event_tick: int, end_of_track: str):
+        self.track_id_map = track_id_map
+        self.end_event_tick = end_event_tick  # tick of [end] event on EVENTS track
+        self.end_of_track = end_of_track  # end of track event in raw string form
+
+    def parse_track(self, track_name):
+        if track_name not in self.track_id_map:
+            return None
+
+        track_id = self.track_id_map[track_name]
+        array_instrument_data = parse_midi_track_by_id(track_id)
+        ticks_per_beat, notes_array, end_first_part, start_second_part = array_instrument_data
+        array_notes, array_events = parse_notes_and_events(notes_array)
+        return MidiTrack(track_name, array_notes, array_events, end_first_part, start_second_part)
+
+    def write_midi_track(self, track: MidiTrack):
+        # TODO
+        pass
 
 
 def get_track_id_map():
@@ -42,7 +72,7 @@ def parse_project() -> MidiProject:
 
     array_instrument_data = parse_midi_track_by_id(track_name_to_id['EVENTS'])  # This toggles the processing of the EVENTS chunk that sets end_event
 
-    ticks, notes_array, end_first_part, start_second_part = array_instrument_data
+    ticks_per_beat, notes_array, end_first_part, start_second_part = array_instrument_data
     array_notes, array_events = parse_notes_and_events(notes_array)
 
     end_events = [e for e in array_events if e.event_text == '[end]']
