@@ -55,49 +55,46 @@ def parse_project() -> MidiProject:
 
 # Originally sets end_of_track and end_event
 def parse_midi_track_by_id(track_id: int):
-    mi = RPR_GetMediaItem(0, track_id)
+    media_item = RPR_GetMediaItem(0, track_id)
     chunk = ""
-    boolvar, mi, chunk, _ = RPR_GetSetItemState(mi, chunk, max_len)
+    _, _, chunk, _ = RPR_GetSetItemState(media_item, chunk, max_len)
     notes_array = []
     vars_array = chunk.splitlines()
-    conto_vars_array = len(vars_array)
-    noteloc = 0
+    n_vars = len(vars_array)
+    note_loc = 0
     ticks = 0
-    end_firstpart = 0
-    start_secondpart = 0
+    end_first_part = 0
+    start_second_part = 0
 
-    for j in range(0, conto_vars_array):
+    for j in range(n_vars):
         if vars_array[j].startswith('E ') or vars_array[j].startswith('e '):
             note = vars_array[j].split(" ")
             if len(note) >= 5:
-                decval = int(note[3], 16)
-                noteloc = noteloc + int(note[1])
-                notes_array.append(note[0] + " " + str(noteloc) + " " + note[2] + " " + str(decval) + " " + str(note[4]))
+                dec_val = int(note[3], 16)
+                note_loc = note_loc + int(note[1])
+                notes_array.append(note[0] + " " + str(note_loc) + " " + note[2] + " " + str(dec_val) + " " + str(note[4]))
         elif vars_array[j].startswith('<X') or vars_array[j].startswith('<x'):
             note = vars_array[j].split(" ")
             if len(note) >= 2:
-                noteloc = noteloc + int(note[1])
-                encText = vars_array[j + 1]
-                encClose = vars_array[j + 2]
-                notes_array.append(note[0] + " " + str(noteloc) + " " + note[2] + " " + str(encText) + " " + encClose)
+                note_loc = note_loc + int(note[1])
+                enc_text = vars_array[j + 1]
+                enc_close = vars_array[j + 2]
+                notes_array.append(note[0] + " " + str(note_loc) + " " + note[2] + " " + str(enc_text) + " " + enc_close)
 
-                _temp_event = base64.b64decode(str(encText))
+                _temp_event = base64.b64decode(str(enc_text))
                 _temp_event = _temp_event[2:]
                 _temp_event = codecs.decode(_temp_event, 'utf-8')
-
-                if _temp_event == '[end]':
-                    end_event = noteloc
         elif "HASDATA" in vars_array[j]:
             note = vars_array[j].split(" ")
             ticks = int(note[2])
             if ticks != 480:
-                result = RPR_MB("One of the MIDI tracks isn't set to 480 ticks per beat. This will break Magma. CAT will now exit", "Invalid ticks per quarter", 0)
+                RPR_MB("One of the MIDI tracks isn't set to 480 ticks per beat. This will break Magma. CAT will now exit", "Invalid ticks per quarter", 0)
                 return
         elif "<SOURCE MIDI" in vars_array[j]:
-            end_firstpart = j + 2  # it's the last element before the MIDI notes/events chunk
+            end_first_part = j + 2  # it's the last element before the MIDI notes/events chunk
         elif "IGNTEMPO" in vars_array[j]:
-            start_secondpart = j - 1  # it's the first element after the MIDI notes/events chunk
-    array_instrument = [ticks, notes_array, end_firstpart, start_secondpart]
+            start_second_part = j - 1  # it's the first element after the MIDI notes/events chunk
+    array_instrument = [ticks, notes_array, end_first_part, start_second_part]
 
     return array_instrument
 
@@ -128,13 +125,13 @@ def parse_notes_and_events(notes):  # instrument is the instrument shortname, NO
 
     for x in range(0, len(raw_events)):
         note_bit = raw_events[x].split(" ")
-        encText = note_bit[3]
-        event_header = binascii.a2b_base64(encText)
+        enc_text = note_bit[3]
+        event_header = binascii.a2b_base64(enc_text)
         event_header = codecs.encode(event_header, 'hex_codec')
         event_header = codecs.decode(event_header, 'utf-8')
         event_header = event_header[:4]
 
-        lyric = base64.b64decode(str(encText))
+        lyric = base64.b64decode(str(enc_text))
         lyric = lyric[2:]
         lyric = codecs.decode(lyric, 'utf-8')
         array_events.append(MidiEvent(note_bit[0], int(note_bit[1]), note_bit[2], str(lyric), note_bit[4], event_header))
