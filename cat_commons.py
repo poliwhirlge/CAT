@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List
+from collections import namedtuple
 
 
 class Note:
@@ -193,5 +193,7 @@ class Measure:
         return iter((self.measure_idx, self.tick_at_start, self.ts_den, self.ts_num, self.ticks_per_beat, self.bpm))
 
     def __repr__(self):
-        return f'[Measure {self.measure_idx}@{self.tick_at_start} {self.ts_num}/{self.ts_den} {self.bpm}]'
+        return f'M{self.measure_idx} [Tick: {int(self.tick_at_start)}, TS: {self.ts_num}/{self.ts_den}, BPM: {self.bpm}]'
 
+
+MBTEntry = namedtuple('MBTEntry', field_names=['measure_idx', 'beat', 'ticks_from_beat', 'ticks_from_measure_start'])

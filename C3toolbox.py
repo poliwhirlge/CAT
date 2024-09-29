@@ -6000,3 +6000,4 @@ def startup():
         RPR_MB("No time markers found, aborting", "Invalid tempo map", 0)
         raise Exception("No time markers found, aborting.")
 
+    return midi_project

@@ -49,6 +49,7 @@ import pg_copy_od_solo
 import remove_notes_pg
 import create_singalong
 import reduce_by_pattern
+import generate_drum_fill_lanes
 
 import os
 import sys
@@ -73,10 +74,11 @@ def execute_this(function):
         subwindow.launch()
 
 
-def launch(function):
+def launch(function, initialize=True):
     global root
     root.destroy()
-    C3toolbox.startup()
+    if initialize:
+        C3toolbox.startup()
     function()
 
 
@@ -161,6 +163,8 @@ if __name__ == '__main__':
 
     doublepedalBtn = tkinter.Button(secDrums, text="Reduce 2x bass pedal", command=lambda: execute_this('single_pedal'))
     doublepedalBtn.grid(row=2, column=5, rowspan=1, sticky="WE", padx=5, pady=2)
+
+    tkinter.Button(secDrums, text='Generate Drum Overdrive Lanes', command=lambda: launch(generate_drum_fill_lanes.launch, False)).grid(row=2, column=6, rowspan=1, sticky='WE', padx=5, pady=2)
 
     secVocals = tkinter.LabelFrame(root, text=" Vocals: ")
     secVocals.grid(row=3, columnspan=5, sticky='WE', \
