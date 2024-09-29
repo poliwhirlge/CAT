@@ -50,6 +50,7 @@ import remove_notes_pg
 import create_singalong
 import reduce_by_pattern
 import generate_drum_fill_lanes
+import generate_pro_keys_range_markers
 
 import os
 import sys
@@ -263,7 +264,7 @@ if __name__ == '__main__':
     sec_pro_keys = tkinter.LabelFrame(root, text=' Pro Keys: ')
     sec_pro_keys.grid(row=6, columnspan=5, sticky='WE', padx=5, pady=5, ipadx=5, ipady=5)
 
-    generate_pro_keys_ranges = tkinter.Button(sec_pro_keys, text="Generate Pro Keys Range Markers", command=lambda: launch(C3toolbox.generate_pro_keys_range_markers))
+    generate_pro_keys_ranges = tkinter.Button(sec_pro_keys, text="Generate Pro Keys Range Markers", command=lambda: launch(generate_pro_keys_range_markers.launch, initialize=False))
     generate_pro_keys_ranges.grid(row=1, column=1, rowspan=1, sticky="WE", padx=5, pady=2)
 
     prokeysreduceBtn = tkinter.Button(sec_pro_keys, text="Reduce pro keys note density based on 5-lane", command=lambda: execute_this('remove_notes_prokeys'))

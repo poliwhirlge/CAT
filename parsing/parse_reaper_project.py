@@ -2,6 +2,7 @@ import base64
 import binascii
 import codecs
 import math
+import operator
 import traceback
 
 import C3notes
@@ -12,15 +13,17 @@ from reaper_python import RPR_CountMediaItems, RPR_GetMediaItem, RPR_GetMediaIte
 from cat_commons import Note, MidiEvent, Measure, MBTEntry
 
 max_len = 1048576
+correct_tqn = 480
 
 
 class MidiTrack:
-    def __init__(self, track_name, notes: List[Note], events: List[MidiEvent], end_first_part: int, start_second_part: int):
+    def __init__(self, track_name, notes: List[Note], events: List[MidiEvent], end_first_part: int, start_second_part: int, track_id: int):
         self.track_name = track_name
         self.notes = notes
         self.events = events
         self.end_first_part = end_first_part
         self.start_second_part = start_second_part
+        self.track_id = track_id
 
 
 class MidiProject:
@@ -41,21 +44,100 @@ class MidiProject:
         array_instrument_data = parse_midi_track_by_id(track_id)
         ticks_per_beat, notes_array, end_first_part, start_second_part = array_instrument_data
         array_notes, array_events = parse_notes_and_events(notes_array)
-        return MidiTrack(track_name, array_notes, array_events, end_first_part, start_second_part)
+        return MidiTrack(track_name, array_notes, array_events, end_first_part, start_second_part, track_id)
 
     def mbt(self, tick):  # Returns an array with 0. measure, 1. beat, 2. ticks, 3. ticks relative to start of measure
         m, b, t, relative_position = 1, 1, tick, tick
-        for x in range(0, len(self.measures)):
-            if self.measures[x].tick_at_start <= tick:
-                m = x + 1
-                relative_position = tick - self.measures[x].tick_at_start
-                b = int(math.floor(relative_position / self.measures[x].ticks_per_beat)) + 1
-                t = int(relative_position - ((b - 1) * self.measures[x].ticks_per_beat))
+        for measure in self.measures:
+            if measure.tick_at_start <= tick:
+                m = measure.measure_idx
+                relative_position = tick - measure.tick_at_start
+                b = int(math.floor(relative_position / measure.ticks_per_beat)) + 1
+                t = int(relative_position - ((b - 1) * measure.ticks_per_beat))
         return MBTEntry(measure_idx=m, beat=b, ticks_from_beat=t, ticks_from_measure_start=relative_position)
 
     def write_midi_track(self, track: MidiTrack):
-        # TODO
-        pass
+        rebuilt_array = rebuild_array([track.notes, track.events], self.end_of_track)
+        chunk = rebuild_chunk(rebuilt_array, track.track_id, track.end_first_part, track.start_second_part)
+        mi = RPR_GetMediaItem(0, track.track_id)
+        RPR_GetSetItemState(mi, chunk, max_len)
+
+
+def rebuild_array(array_notesevents, end_of_track):
+    # Create a new temp array
+    array_temp = []  # This array will contain all events/notes and it will be used for sorting. Its content will then go in a raw text array
+    array_raw = []
+    # Loop through each note and convert the note on event in raw format to add it to the raw array
+
+    for x in range(0, len(array_notesevents[0])):
+        array_temp.append([array_notesevents[0][x][0], int(array_notesevents[0][x][1]), array_notesevents[0][x][5], (hex(int(array_notesevents[0][x][2])))[2:], array_notesevents[0][x][3]])
+        # and create a note off event with absolute location
+        array_temp.append(
+            [array_notesevents[0][x][0], int(array_notesevents[0][x][1]) + int(array_notesevents[0][x][4]), str("8" + str(array_notesevents[0][x][5])[1:]), (hex(int(array_notesevents[0][x][2])))[2:],
+             "00"])
+
+    for x in range(0, len(array_notesevents[1])):
+        hex_lyric = array_notesevents[1][x][5] + binascii.hexlify(array_notesevents[1][x][3].encode()).decode('utf-8')
+
+        encoded_text = str(base64.b64encode(codecs.decode(hex_lyric, 'hex_codec')).decode('utf-8'))
+        array_temp.append([array_notesevents[1][x][0], int(array_notesevents[1][x][1]), array_notesevents[1][x][2], encoded_text, array_notesevents[1][x][4]])
+
+    # Incorporate the events from array_rawevents and sort by absolute location
+    array_temp.sort(key=operator.itemgetter(1, 0))
+
+    # We add the end of track event so the MIDI track doesn't cut off
+    end_of_track_array = end_of_track.split(" ")
+    end_of_track_time = int(end_of_track_array[1])
+    if array_temp[-1][1] > int(end_of_track_array[1]):
+        end_of_track_time = array_temp[-1][1] + correct_tqn
+    array_temp.append([end_of_track_array[0], end_of_track_time, end_of_track_array[2], (hex(int(end_of_track_array[3])))[2:], end_of_track_array[4]])
+
+    # Loop through the rawarray. Set location of all notes based on difference between location of note x and of note x-1 of the rawarray
+
+    if array_temp[0][0].startswith('E') or array_temp[0][0].startswith('e'):
+        array_raw.append(array_temp[0][0] + " " + str(array_temp[0][1]) + " " + str(array_temp[0][2]) + " " + str(array_temp[0][3]) + " " + str(array_temp[0][4]))
+    else:
+        array_raw.append(array_temp[0][0] + " " + str(array_temp[0][1]) + " " + str(array_temp[0][2]) + "\n  " + str(array_temp[0][3]) + "\n" + str(array_temp[0][4]))
+
+    for x in range(1, len(array_temp)):
+        new_location = array_temp[x][1] - array_temp[x - 1][1]
+
+        if array_temp[x][0].startswith('E') or array_temp[x][0].startswith('e'):
+            array_raw.append(array_temp[x][0] + " " + str(new_location) + " " + str(array_temp[x][2]) + " " + str(array_temp[x][3]) + " " + str(array_temp[x][4]))
+        else:
+            array_raw.append(array_temp[x][0] + " " + str(new_location) + " " + str(array_temp[x][2]) + "\n  " + array_temp[x][3] + "\n" + str(array_temp[x][4]))
+    return array_raw
+
+
+def rebuild_chunk(notes_array, instrument, end, start):
+    # Let's start by putting the notes/events portion of the chunk back together. The array is already prepped here.
+    noteschunk = ""
+    for x in range(0, len(notes_array)):
+        if notes_array[x].startswith('E') or notes_array[x].startswith('e'):
+            noteschunk += notes_array[x] + "\n"
+        else:
+            noteschunk += notes_array[x] + "\n"
+    # The notes/events portion of the chunk is done, now we loop through the whole chunk to find the spot where we need to snip
+    bi = RPR_GetMediaItem(0, instrument)
+    first_chunk = ""
+    second_chunk = ""
+    maxlen = 1048576
+    subchunk = ""
+    (boolvar, bi, subchunk, maxlen) = RPR_GetSetItemState(bi, subchunk, maxlen)
+
+    vars_array = subchunk.splitlines()
+
+    for j in range(0, end + 1):
+        first_chunk += vars_array[j] + "\n"
+
+    for k in range(start, len(vars_array)):
+        # PM(f"'-{vars_array[k]}'\n")
+        second_chunk += str(vars_array[k])
+        if k < len(vars_array):
+            second_chunk += "\n"
+
+    chunk = first_chunk + noteschunk + second_chunk
+    return chunk
 
 
 def get_track_id_map():
@@ -133,8 +215,8 @@ def parse_midi_track_by_id(track_id: int):
         elif "HASDATA" in vars_array[j]:
             note = vars_array[j].split(" ")
             ticks = int(note[2])
-            if ticks != 480:
-                RPR_MB("One of the MIDI tracks isn't set to 480 ticks per beat. This will break Magma. CAT will now exit", "Invalid ticks per quarter", 0)
+            if ticks != correct_tqn:
+                RPR_MB(f'One of the MIDI tracks isn\'t set to {correct_tqn} ticks per beat. This will break Magma. CAT will now exit', 'Invalid ticks per quarter', 0)
                 return
         elif "<SOURCE MIDI" in vars_array[j]:
             end_first_part = j + 2  # it's the last element before the MIDI notes/events chunk
