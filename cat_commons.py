@@ -197,3 +197,5 @@ class Measure:
 
 
 MBTEntry = namedtuple('MBTEntry', field_names=['measure_idx', 'beat', 'ticks_from_beat', 'ticks_from_measure_start'])
+
+TimeSigMarker = namedtuple('TimeSigMarker', field_names=['bpm', 'ts_den', 'ts_num', 'tick'])

@@ -7,11 +7,11 @@ import traceback
 
 import C3notes
 from collections import defaultdict
-from typing import List
+from typing import List, Tuple
 from bisect import bisect_right
 from reaper_python import RPR_CountMediaItems, RPR_GetMediaItem, RPR_GetMediaItem_Track, RPR_GetSetMediaTrackInfo_String, RPR_GetSetItemState, RPR_ShowConsoleMsg, RPR_MB, \
     RPR_CSurf_TrackFromID, RPR_GetTrackEnvelopeByName, RPR_GetSetEnvelopeState
-from cat_commons import Note, MidiEvent, Measure, MBTEntry
+from cat_commons import Note, MidiEvent, Measure, MBTEntry, TimeSigMarker
 
 max_len = 1048576
 correct_tqn = 480
@@ -32,7 +32,8 @@ class MidiProject:
         self.track_id_map = track_id_map
         self.end_event_tick = end_event_tick  # tick of [end] event on EVENTS track
         self.end_of_track = end_of_track  # end of track event in raw string form
-        self.measures: List[Measure] = parse_tempo_map(end_event_tick)
+        self.measures, self.time_sig_changes = parse_tempo_map(end_event_tick)
+        RPR_ShowConsoleMsg(f'TS changes: {self.time_sig_changes}\n')
         if len(self.measures) == 0:
             RPR_MB("No time markers found, aborting", "Invalid tempo map", 0)
             raise Exception("No time markers found, aborting.")
@@ -111,32 +112,30 @@ def rebuild_array(array_notesevents, end_of_track):
 
 def rebuild_chunk(notes_array, instrument, end, start):
     # Let's start by putting the notes/events portion of the chunk back together. The array is already prepped here.
-    noteschunk = ""
+    notes_chunk = ""
     for x in range(0, len(notes_array)):
         if notes_array[x].startswith('E') or notes_array[x].startswith('e'):
-            noteschunk += notes_array[x] + "\n"
+            notes_chunk += notes_array[x] + "\n"
         else:
-            noteschunk += notes_array[x] + "\n"
+            notes_chunk += notes_array[x] + "\n"
     # The notes/events portion of the chunk is done, now we loop through the whole chunk to find the spot where we need to snip
     bi = RPR_GetMediaItem(0, instrument)
     first_chunk = ""
     second_chunk = ""
-    maxlen = 1048576
-    subchunk = ""
-    (boolvar, bi, subchunk, maxlen) = RPR_GetSetItemState(bi, subchunk, maxlen)
+    sub_chunk = ""
+    _, _, sub_chunk, _ = RPR_GetSetItemState(bi, sub_chunk, max_len)
 
-    vars_array = subchunk.splitlines()
+    vars_array = sub_chunk.splitlines()
 
     for j in range(0, end + 1):
         first_chunk += vars_array[j] + "\n"
 
     for k in range(start, len(vars_array)):
-        # PM(f"'-{vars_array[k]}'\n")
         second_chunk += str(vars_array[k])
         if k < len(vars_array):
             second_chunk += "\n"
 
-    chunk = first_chunk + noteschunk + second_chunk
+    chunk = first_chunk + notes_chunk + second_chunk
     return chunk
 
 
@@ -267,7 +266,7 @@ def parse_notes_and_events(notes):  # instrument is the instrument shortname, NO
     return [array_notes, array_events]
 
 
-def parse_tempo_map(end_event_tick, ppq: int = 480) -> List[Measure]:
+def parse_tempo_map(end_event_tick, ppq: int = 480) -> Tuple[List[Measure], List[TimeSigMarker]]:
     # This function creates measures array, an array containing all measures with their TS, BPM, starting point, etc.
     tsden_array = {'1048': 16, '983': 15, '917': 14, '851': 13, '786': 12, '720': 11, '655': 10, '589': 9, '524': 8, '458': 7, '393': 6, '327': 5, '262': 4, '196': 3, '131': 2, '65': 1}
     tsnum_array = {16: 577, 15: 41, 14: 505, 13: 969, 12: 433, 11: 897, 10: 361, 9: 825, 8: 289, 7: 753, 6: 217, 5: 681, 4: 145, 3: 609, 2: 73, 1: 537}
@@ -322,7 +321,7 @@ def parse_tempo_map(end_event_tick, ppq: int = 480) -> List[Measure]:
 
     if len(nodes_array) > 0:
         old_ts = str(nodes_array[0][2]) + str(nodes_array[0][3])
-        timesigchanges_array.append([nodes_array[0][0], nodes_array[0][2], nodes_array[0][3], 0])
+        timesigchanges_array.append(TimeSigMarker(nodes_array[0][0], nodes_array[0][2], nodes_array[0][3], 0))
         nodes_array[0].append(0)
         for j in range(1, len(nodes_array)):
 
@@ -335,7 +334,7 @@ def parse_tempo_map(end_event_tick, ppq: int = 480) -> List[Measure]:
             cur_ts = str(nodes_array[j][2]) + str(nodes_array[j][3])
 
             if old_ts != cur_ts:
-                timesigchanges_array.append([nodes_array[j][0], nodes_array[j][2], nodes_array[j][3], ticks_passed])
+                timesigchanges_array.append(TimeSigMarker(nodes_array[j][0], nodes_array[j][2], nodes_array[j][3], ticks_passed))
 
             old_ts = str(nodes_array[j][2]) + str(nodes_array[j][3])
 
@@ -390,4 +389,4 @@ def parse_tempo_map(end_event_tick, ppq: int = 480) -> List[Measure]:
             if ok == 0:
                 measures_array[x].bpm = nodes_array[j][1]
 
-        return measures_array
+        return measures_array, timesigchanges_array
