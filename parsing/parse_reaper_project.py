@@ -8,6 +8,7 @@ import traceback
 import C3notes
 from collections import defaultdict
 from typing import List
+from bisect import bisect_right
 from reaper_python import RPR_CountMediaItems, RPR_GetMediaItem, RPR_GetMediaItem_Track, RPR_GetSetMediaTrackInfo_String, RPR_GetSetItemState, RPR_ShowConsoleMsg, RPR_MB, \
     RPR_CSurf_TrackFromID, RPR_GetTrackEnvelopeByName, RPR_GetSetEnvelopeState
 from cat_commons import Note, MidiEvent, Measure, MBTEntry
@@ -46,14 +47,13 @@ class MidiProject:
         array_notes, array_events = parse_notes_and_events(notes_array)
         return MidiTrack(track_name, array_notes, array_events, end_first_part, start_second_part, track_id)
 
-    def mbt(self, tick):  # Returns an array with 0. measure, 1. beat, 2. ticks, 3. ticks relative to start of measure
-        m, b, t, relative_position = 1, 1, tick, tick
-        for measure in self.measures:
-            if measure.tick_at_start <= tick:
-                m = measure.measure_idx
-                relative_position = tick - measure.tick_at_start
-                b = int(math.floor(relative_position / measure.ticks_per_beat)) + 1
-                t = int(relative_position - ((b - 1) * measure.ticks_per_beat))
+    def mbt(self, tick):
+        idx = bisect_right(self.measures, tick, key=lambda x: x.tick_at_start)
+        measure = self.measures[idx - 1]
+        m = measure.measure_idx
+        relative_position = tick - measure.tick_at_start
+        b = int(math.floor(relative_position / measure.ticks_per_beat)) + 1
+        t = int(relative_position - ((b - 1) * measure.ticks_per_beat))
         return MBTEntry(measure_idx=m, beat=b, ticks_from_beat=t, ticks_from_measure_start=relative_position)
 
     def write_midi_track(self, track: MidiTrack):
