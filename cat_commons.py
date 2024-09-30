@@ -139,11 +139,11 @@ class MidiEvent:
 
 
 class Measure:
-    def __init__(self, measure_idx, tick_at_start, ts_den, ts_num, ticks_per_beat, bpm):
+    def __init__(self, measure_idx, tick_at_start, ts_num, ts_den, ticks_per_beat, bpm):
         self.measure_idx = measure_idx
         self.tick_at_start = tick_at_start
-        self.ts_den = ts_den
         self.ts_num = ts_num
+        self.ts_den = ts_den
         self.ticks_per_beat = ticks_per_beat
         self.bpm = bpm
 
@@ -159,9 +159,9 @@ class Measure:
         elif item == 1:
             return self.tick_at_start
         elif item == 2:
-            return self.ts_den
-        elif item == 3:
             return self.ts_num
+        elif item == 3:
+            return self.ts_den
         elif item == 4:
             return self.ticks_per_beat
         elif item == 5:
@@ -180,9 +180,9 @@ class Measure:
         elif key == 1:
             self.tick_at_start = value
         elif key == 2:
-            self.ts_den = value
-        elif key == 3:
             self.ts_num = value
+        elif key == 3:
+            self.ts_den = value
         elif key == 4:
             self.ticks_per_beat = value
         elif key == 5:
@@ -190,7 +190,7 @@ class Measure:
         return None
 
     def __iter__(self):
-        return iter((self.measure_idx, self.tick_at_start, self.ts_den, self.ts_num, self.ticks_per_beat, self.bpm))
+        return iter((self.measure_idx, self.tick_at_start, self.ts_num, self.ts_den, self.ticks_per_beat, self.bpm))
 
     def __repr__(self):
         return f'M{self.measure_idx} [Tick: {int(self.tick_at_start)}, TS: {self.ts_num}/{self.ts_den}, BPM: {self.bpm}]'
@@ -198,4 +198,4 @@ class Measure:
 
 MBTEntry = namedtuple('MBTEntry', field_names=['measure_idx', 'beat', 'ticks_from_beat', 'ticks_from_measure_start'])
 
-TimeSigMarker = namedtuple('TimeSigMarker', field_names=['bpm', 'ts_den', 'ts_num', 'tick'])
+TimeSigMarker = namedtuple('TimeSigMarker', field_names=['unused', 'ts_num', 'ts_den', 'tick', 'measure_idx'])

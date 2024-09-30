@@ -10,7 +10,7 @@ from collections import defaultdict
 from typing import List, Tuple
 from bisect import bisect_right
 from reaper_python import RPR_CountMediaItems, RPR_GetMediaItem, RPR_GetMediaItem_Track, RPR_GetSetMediaTrackInfo_String, RPR_GetSetItemState, RPR_ShowConsoleMsg, RPR_MB, \
-    RPR_CSurf_TrackFromID, RPR_GetTrackEnvelopeByName, RPR_GetSetEnvelopeState
+    RPR_CSurf_TrackFromID, RPR_GetTrackEnvelopeByName, RPR_GetSetEnvelopeState, RPR_TimeMap_GetTimeSigAtTime
 from cat_commons import Note, MidiEvent, Measure, MBTEntry, TimeSigMarker
 
 max_len = 1048576
@@ -34,6 +34,7 @@ class MidiProject:
         self.end_of_track = end_of_track  # end of track event in raw string form
         self.measures, self.time_sig_changes = parse_tempo_map(end_event_tick)
         RPR_ShowConsoleMsg(f'TS changes: {self.time_sig_changes}\n')
+        RPR_ShowConsoleMsg(f'Measures: {self.measures}\n')
         if len(self.measures) == 0:
             RPR_MB("No time markers found, aborting", "Invalid tempo map", 0)
             raise Exception("No time markers found, aborting.")
@@ -49,13 +50,16 @@ class MidiProject:
         return MidiTrack(track_name, array_notes, array_events, end_first_part, start_second_part, track_id)
 
     def mbt(self, tick):
-        idx = bisect_right(self.measures, tick, key=lambda x: x.tick_at_start)
-        measure = self.measures[idx - 1]
-        m = measure.measure_idx
-        relative_position = tick - measure.tick_at_start
-        b = int(math.floor(relative_position / measure.ticks_per_beat)) + 1
-        t = int(relative_position - ((b - 1) * measure.ticks_per_beat))
-        return MBTEntry(measure_idx=m, beat=b, ticks_from_beat=t, ticks_from_measure_start=relative_position)
+        idx = bisect_right(self.time_sig_changes, tick, key=lambda x: x.tick)
+        time_sig = self.time_sig_changes[idx - 1]
+        ticks_from_prev_marker = tick - time_sig.tick
+        ticks_per_measure = correct_tqn * time_sig.ts_num / time_sig.ts_den * 4
+        ticks_per_beat = correct_tqn / time_sig.ts_den * 4
+        n_measures = math.floor(ticks_from_prev_marker / ticks_per_measure)
+        relative_position = round(ticks_from_prev_marker - n_measures * ticks_per_measure)
+        b = math.floor(relative_position / ticks_per_beat)
+        t = round(relative_position % ticks_per_beat)
+        return MBTEntry(measure_idx=time_sig.measure_idx + n_measures, beat=b + 1, ticks_from_beat=t, ticks_from_measure_start=relative_position)
 
     def write_midi_track(self, track: MidiTrack):
         rebuilt_array = rebuild_array([track.notes, track.events], self.end_of_track)
@@ -287,13 +291,15 @@ def parse_tempo_map(end_event_tick, ppq: int = 480) -> Tuple[List[Measure], List
     timesignature = '262148'  # By default it's 4/4
     chunk = "" + envstate[2]
     vars_array = chunk.splitlines()
+    RPR_ShowConsoleMsg(f'VARS ARRAY: {vars_array}\n\n')
 
-    # Create an array of 0. seconds of the point, 1. BPM, 2. time signature denominator, 3. time signature numerator , 4. ticks since 0
+    temp_tempo = RPR_TimeMap_GetTimeSigAtTime(0, 0, 0, 0, 0)
+    RPR_ShowConsoleMsg(f'TEMPO: {temp_tempo}\n\n')
+
+    # Create an array of 0. seconds of the point, 1. BPM, 2. time signature num, 3. time signature den , 4. ticks since 0
     for j in range(0, len(vars_array)):
         if vars_array[j].startswith('PT '):
             node = vars_array[j].split(" ")
-            # if node[1] == '0.000000000000':
-            #    node[1] = 0
 
             node_array = [float(node[1]), float(node[2])]
             if len(node) > 4:
@@ -312,29 +318,34 @@ def parse_tempo_map(end_event_tick, ppq: int = 480) -> Tuple[List[Measure], List
             node_array.append(timesignature_denominator)
             nodes_array.append(node_array)
 
-    # Create an array of TS changes: 0. BPM, 1. time signature denominator, 2. time signature numerator, 3. ticks passed since 0
+    RPR_ShowConsoleMsg(f'node_array: {nodes_array}\n\n')
+
+    # Create an array of TS changes: 0. BPM, 1. time signature num, 2. time signature den, 3. ticks passed since 0
     # decimal.Decimal(ticks_passed)
     ticks_passed = 0
 
     if len(nodes_array) == 0:
-        return []
+        return [], []
 
     if len(nodes_array) > 0:
         old_ts = str(nodes_array[0][2]) + str(nodes_array[0][3])
-        timesigchanges_array.append(TimeSigMarker(nodes_array[0][0], nodes_array[0][2], nodes_array[0][3], 0))
+        timesigchanges_array.append(TimeSigMarker(0, nodes_array[0][2], nodes_array[0][3], 0, 1))
         nodes_array[0].append(0)
         for j in range(1, len(nodes_array)):
 
             ticks_per_second = (ppq * nodes_array[j - 1][1]) / 60
             time_passed = nodes_array[j][0] - nodes_array[j - 1][0]
             ticks_passed = (time_passed * ticks_per_second) + ticks_passed
-            ticks_passed = ticks_passed
             ticks_passed = round(ticks_passed, 10)
             nodes_array[j].append(ticks_passed)
             cur_ts = str(nodes_array[j][2]) + str(nodes_array[j][3])
 
             if old_ts != cur_ts:
-                timesigchanges_array.append(TimeSigMarker(nodes_array[j][0], nodes_array[j][2], nodes_array[j][3], ticks_passed))
+                prev_marker = timesigchanges_array[-1]
+                ticks_per_measure = correct_tqn * 4 * prev_marker.ts_num / prev_marker.ts_den
+                n_measures = (round(ticks_passed) - prev_marker.tick) / ticks_per_measure
+                RPR_ShowConsoleMsg(f'{ticks_per_measure} {n_measures}\n\n')
+                timesigchanges_array.append(TimeSigMarker(0, nodes_array[j][2], nodes_array[j][3], round(ticks_passed), prev_marker.measure_idx + round(n_measures)))
 
             old_ts = str(nodes_array[j][2]) + str(nodes_array[j][3])
 
@@ -380,13 +391,10 @@ def parse_tempo_map(end_event_tick, ppq: int = 480) -> Tuple[List[Measure], List
         # Now we add the BPM for each measure taking the BPM value of the measure from nodes_array
         for x in range(0, len(measures_array)):
             ticks_start = measures_array[x][1]
-            ok = 0
+            measures_array[x].bpm = nodes_array[0][1]
             for j in reversed(list(range(0, len(nodes_array)))):
                 if int(round(float(ticks_start), 0)) >= int(float(nodes_array[j][4])):
                     measures_array[x].bpm = nodes_array[j][1]
-                    ok = 1
                     break
-            if ok == 0:
-                measures_array[x].bpm = nodes_array[j][1]
 
         return measures_array, timesigchanges_array
