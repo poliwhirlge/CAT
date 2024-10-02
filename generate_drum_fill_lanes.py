@@ -1,9 +1,24 @@
 import math
 from collections import defaultdict
+from typing import Dict, Set, List
 from dataclasses import dataclass
 from enum import Enum, auto
+from bisect import bisect_right
+
+from cat_commons import Note
 from reaper_python import RPR_ShowConsoleMsg
 from parsing.parse_reaper_project import parse_project
+
+
+class DrumNote(Enum):
+    GreenCymbal = auto()
+    BlueCymbal = auto()
+    YellowCymbal = auto()
+    Red = auto()
+    Kick = auto()
+    GreenTom = auto()
+    BlueTom = auto()
+    YellowTom = auto()
 
 
 class NoteColor(Enum):
@@ -14,24 +29,13 @@ class NoteColor(Enum):
     Kick = auto()
 
 
-class NoteType(Enum):
-    Cymbal = auto()
-    Tom = auto()
-
-
-@dataclass
-class DrumNote:
-    color: NoteColor
-    type: NoteType = NoteType.Cymbal
-
-
 drum_pitch_map = {
-    100: ["Expert Green", "notes_x", "G"],
-    99: ["Expert Blue", "notes_x", "B"],
-    98: ["Expert Yellow", "notes_x", "Y"],
-    97: ["Expert Red", "notes_x", "R"],
-    96: ["Expert Kick", "notes_x", "O"],
-    95: ["Expert 2x Kick", "notes_x", "O"],
+    100: DrumNote.GreenCymbal,
+    99: DrumNote.BlueCymbal,
+    98: DrumNote.YellowCymbal,
+    97: DrumNote.Red,
+    96: DrumNote.Kick,
+    95: DrumNote.Kick,
 }
 
 tom_markers_map = {
@@ -46,18 +50,33 @@ def launch():
     drum_track = midi_project.parse_track('PART DRUMS')
     events_track = midi_project.parse_track('EVENTS')
 
-    notes_by_measure = defaultdict(lambda: set())
-    notes_by_tick = defaultdict(lambda: set())
-    tom_markers = []
+    notes_by_measure: Dict[int, Set[DrumNote]] = defaultdict(lambda: set())
+    notes_by_tick: Dict[int, Set[DrumNote]] = defaultdict(lambda: set())
+    tom_markers: Dict[NoteColor, List[Note]] = defaultdict(lambda: list())
     for note in drum_track.notes:
         if note.pitch in tom_markers_map:
-            tom_markers.append(note)
-        elif note.pitch in drum_pitch_map:
-            m, *_ = midi_project.mbt(note.tick)
-            notes_by_measure[m].add(note)
-            notes_by_tick[note.tick].add(note)
+            tom_markers[tom_markers_map[note.pitch]].append(note)
 
-    RPR_ShowConsoleMsg(f'Notes: {"\n".join([f'{k},{len(v)}' for k, v in notes_by_measure.items()])} \n')
+    def is_tom(color, tick):
+        if color not in tom_markers_map:
+            return False
+        markers = tom_markers[color]
+        idx = bisect_right(markers, tick, key=lambda n: n.tick)
+        return markers[idx - 1].tick <= tick < markers[idx - 1].tick + markers[idx - 1].duration
+
+    for note in drum_track.notes:
+        if note.pitch in drum_pitch_map:
+            d_note = drum_pitch_map[note.pitch]
+            m, *_ = midi_project.mbt(note.tick)
+            if d_note == DrumNote.GreenCymbal:
+                d_note = DrumNote.GreenTom if is_tom(NoteColor.Green, note.tick) else DrumNote.GreenCymbal
+            if d_note == DrumNote.BlueCymbal:
+                d_note = DrumNote.BlueTom if is_tom(NoteColor.Blue, note.tick) else DrumNote.BlueCymbal
+            if d_note == DrumNote.YellowCymbal:
+                d_note = DrumNote.YellowTom if is_tom(NoteColor.Yellow, note.tick) else DrumNote.YellowCymbal
+
+            notes_by_measure[m].add(d_note)
+            notes_by_tick[note.tick].add(d_note)
 
     practice_sections = events_track.get_practice_sections()
     RPR_ShowConsoleMsg(f'practice_sections {practice_sections}\n\n')
@@ -87,9 +106,9 @@ def launch():
         is_quiet = len(notes_m) <= 3
         next_measure_quiet = len(notes_m_1_a) <= 2
         re_entry = len(notes_m) > len(notes_m_1) and len(notes_m) > len(notes_m_2)
-        has_kick = any(n.pitch == 96 for n in note_on_tick)
-        has_snare = any(n.pitch == 97 for n in note_on_tick)
-        has_crash = any(n.pitch == 100 or n.pitch == 99 for n in note_on_tick)
+        has_kick = DrumNote.Kick in note_on_tick
+        has_snare = DrumNote.Red in note_on_tick
+        has_crash = DrumNote.GreenCymbal in note_on_tick or DrumNote.BlueCymbal in note_on_tick
         kick_and_crash = has_kick and has_crash
         is_section_start = any(m_idx == midi_project.mbt(p.tick).measure_idx for p in practice_sections)
 
@@ -116,7 +135,6 @@ def launch():
         }
 
     suitability = [rate_suitability(m.measure_idx, m.tick_at_start) for m in midi_project.measures]
-    # RPR_ShowConsoleMsg(f'Scores: {[(m.measure_idx, score) for m, score in zip(midi_project.measures, temp)]}\n')
 
     drum_fill_markers_all = []
     drum_fill_markers_secondary = []
@@ -131,7 +149,6 @@ def launch():
             # TODO look for first note after section start
 
         n_measure_in_section = next_measure_idx - measure_idx
-        n_markers_expected = math.floor(n_measure_in_section / m_between_markers)
 
         if n_measure_in_section % m_between_markers == 0:
             for candidate_m in range(measure_idx, next_measure_idx, m_between_markers):
@@ -143,8 +160,7 @@ def launch():
                     drum_fill_markers_all.append(candidate_m)
         else:
             for candidate_m in range(measure_idx, next_measure_idx, m_between_markers):
-                scores = [suitability[candidate_m + m][0] for m in range(n_measure_in_section % m_between_markers)]
-                RPR_ShowConsoleMsg(f'candidate_m {candidate_m} scores {scores} \n')
+                scores = [suitability[candidate_m + m - 1][0] for m in range(n_measure_in_section % m_between_markers + 1)]
                 max_score = max(scores)
                 max_idx = scores.index(max_score)
                 max_measure = candidate_m + max_idx
@@ -153,6 +169,27 @@ def launch():
                 elif max_score == 0:
                     drum_fill_markers_secondary.append(max_measure)
 
+    # TODO Handle last section
+    start_of_last_section_tick = practice_sections[-1].tick if len(practice_sections) > 0 else min(notes_by_tick.keys())
+
     RPR_ShowConsoleMsg(f'Candidate drum fill markers: {drum_fill_markers_all}\n')
     only_strong_candidates = [m for m in drum_fill_markers_all if m not in drum_fill_markers_secondary]
     RPR_ShowConsoleMsg(f'Candidate drum fill markers (strong only): {only_strong_candidates}\n')
+
+    drum_fill_markers_to_place = []
+
+    for m in drum_fill_markers_all:
+        tempo = midi_project.measures[m - 1].bpm
+        m_between_markers = 8 if tempo >= 160 else 4
+        m_between_weak_markers = 8 if tempo >= 120 else 4
+        if len(drum_fill_markers_to_place) == 0:
+            drum_fill_markers_to_place.append(m)
+        elif m in drum_fill_markers_secondary:
+            if drum_fill_markers_to_place[-1] + m_between_weak_markers <= m:
+                drum_fill_markers_to_place.append(m)
+        else:
+            if drum_fill_markers_to_place[-1] + m_between_markers <= m:
+                drum_fill_markers_to_place.append(m)
+
+    RPR_ShowConsoleMsg(f'Placing drum markers : {drum_fill_markers_to_place}\n')
+
