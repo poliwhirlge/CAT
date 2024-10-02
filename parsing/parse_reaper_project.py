@@ -26,6 +26,11 @@ class MidiTrack:
         self.start_second_part = start_second_part
         self.track_id = track_id
 
+    def get_practice_sections(self):
+        non_practice_sections = ['EVENTS', '[crowd_intense]', '[crowd_normal]', '[crowd_mellow]', '[crowd_noclap]',
+                                 '[music_start]', '[music_end]', '[end]', '[crowd_clap]', '[crowd_realtime]', '[coda]']
+        return [event for event in self.events if event.event_text not in non_practice_sections]
+
 
 class MidiProject:
     def __init__(self, track_id_map, end_event_tick: int, end_of_track: str):
