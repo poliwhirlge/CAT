@@ -110,6 +110,7 @@ def launch():
             'next_measure_quiet': next_measure_quiet,
             're_entry': re_entry,
             'has_kick': has_kick,
+            'has_snare': has_snare,
             'has_crash': has_crash,
             'is_note': len(note_on_tick) > 0
         }
