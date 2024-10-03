@@ -7,7 +7,7 @@ from bisect import bisect_right
 
 from cat_commons import Note
 from reaper_python import RPR_ShowConsoleMsg
-from parsing.parse_reaper_project import parse_project
+from parsing.parse_reaper_project import parse_project, MidiProject, MidiTrack
 
 
 class DrumNote(Enum):
@@ -43,6 +43,22 @@ tom_markers_map = {
     111: NoteColor.Blue,
     110: NoteColor.Yellow
 }
+
+bre_notes = [120, 121, 122, 123, 124]
+
+
+def replace_bre_notes(midi_project: MidiProject, drum_track: MidiTrack, drum_fill_markers_to_place):
+    # remove existing BRE notes
+    # TODO keep BRE on [coda]
+    notes = [n for n in drum_track.notes if n.pitch not in bre_notes]
+
+    # add new fill markers
+    for m_idx in drum_fill_markers_to_place:
+        for fill_note in bre_notes:
+            notes.append(Note(tick=midi_project.measures[m_idx - 2].tick_at_start, pitch=fill_note, duration=480 * 4))
+
+    drum_track.notes = notes
+    midi_project.write_midi_track(drum_track)
 
 
 def launch():
@@ -170,7 +186,7 @@ def launch():
     # Handle last section
     # TODO improve algorithm
     start_of_last_section_tick = practice_sections[-1].tick if len(practice_sections) > 0 else min(notes_by_tick.keys())
-    end_of_song_tick = max(notes_by_tick.keys())
+    end_of_song_tick = max([k for k, v in notes_by_tick.items() if len(v) > 0])
     m_start, *_ = midi_project.mbt(start_of_last_section_tick)
     m_end, *_ = midi_project.mbt(end_of_song_tick)
     m_end -= 8  # stop putting markers near the end of the song
@@ -206,3 +222,4 @@ def launch():
 
     RPR_ShowConsoleMsg(f'Placing drum markers : {drum_fill_markers_to_place}\n')
 
+    replace_bre_notes(midi_project, drum_track, drum_fill_markers_to_place)

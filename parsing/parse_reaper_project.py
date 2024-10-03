@@ -296,10 +296,8 @@ def parse_tempo_map(end_event_tick, ppq: int = 480) -> Tuple[List[Measure], List
     timesignature = '262148'  # By default it's 4/4
     chunk = "" + envstate[2]
     vars_array = chunk.splitlines()
-    RPR_ShowConsoleMsg(f'VARS ARRAY: {vars_array}\n\n')
 
     temp_tempo = RPR_TimeMap_GetTimeSigAtTime(0, 0, 0, 0, 0)
-    RPR_ShowConsoleMsg(f'TEMPO: {temp_tempo}\n\n')
 
     # Create an array of 0. seconds of the point, 1. BPM, 2. time signature num, 3. time signature den , 4. ticks since 0
     for j in range(0, len(vars_array)):
