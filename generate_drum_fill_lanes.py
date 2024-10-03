@@ -80,11 +80,9 @@ def launch():
 
     practice_sections = events_track.get_practice_sections()
     RPR_ShowConsoleMsg(f'practice_sections {practice_sections}\n\n')
-    practice_range_start = [midi_project.mbt(section.tick).measure_idx for section in practice_sections]
-    if len(practice_range_start) == 0:
-        RPR_ShowConsoleMsg('No practice sections found.')
-        practice_range_start.append(1)
-    RPR_ShowConsoleMsg(f'practice_range_start {practice_range_start}\n\n')
+
+    if len(practice_sections) == 0:
+        RPR_ShowConsoleMsg('No practice sections found, this function works better if there are section markers.\n')
 
     for section in practice_sections:
         measure_idx, _, _, tick_from_measure_start = midi_project.mbt(section.tick)
@@ -169,8 +167,23 @@ def launch():
                 elif max_score == 0:
                     drum_fill_markers_secondary.append(max_measure)
 
-    # TODO Handle last section
+    # Handle last section
+    # TODO improve algorithm
     start_of_last_section_tick = practice_sections[-1].tick if len(practice_sections) > 0 else min(notes_by_tick.keys())
+    end_of_song_tick = max(notes_by_tick.keys())
+    m_start, *_ = midi_project.mbt(start_of_last_section_tick)
+    m_end, *_ = midi_project.mbt(end_of_song_tick)
+    m_end -= 8  # stop putting markers near the end of the song
+    m_between_markers = 4  # just put them everywhere
+    for candidate_m in range(m_start, m_end, m_between_markers):
+        scores = [suitability[candidate_m + m - 1][0] for m in range(4)]
+        max_score = max(scores)
+        max_idx = scores.index(max_score)
+        max_measure = candidate_m + max_idx
+        if max_score > 0:
+            drum_fill_markers_all.append(max_measure)
+        elif max_score == 0:
+            drum_fill_markers_secondary.append(max_measure)
 
     RPR_ShowConsoleMsg(f'Candidate drum fill markers: {drum_fill_markers_all}\n')
     only_strong_candidates = [m for m in drum_fill_markers_all if m not in drum_fill_markers_secondary]
