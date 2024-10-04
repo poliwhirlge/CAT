@@ -124,7 +124,7 @@ notesname_array = {
             61: ["Easy Red", "notes_e", "R"],
             60: ["Easy Kick", "notes_e", "O"],
             59: ["Easy 2x Kick", "notes_e", "O"],
-            51: ["Anim. Floort Tom RH", "animations"],
+            51: ["Anim. Floor Tom RH", "animations"],
             50: ["Anim. Floor Tom LH", "animations"],
             49: ["Anim. TOM2 RH", "animations"],
             48: ["Anim. TOM2 LH", "animations"],

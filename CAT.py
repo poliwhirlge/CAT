@@ -51,6 +51,7 @@ import create_singalong
 import reduce_by_pattern
 import generate_drum_fill_lanes
 import generate_pro_keys_range_markers
+import generate_overdrive_phrases
 
 import os
 import sys
@@ -232,19 +233,22 @@ if __name__ == '__main__':
     secSupersets.grid(row=4, columnspan=5, sticky='WE', padx=5, pady=5, ipadx=5, ipady=5)
 
     reductionsBtn = tkinter.Button(secSupersets, text="Automatic reductions (5-lane)", command=lambda: execute_this('reduce_5lane'))
-    reductionsBtn.grid(row=4, column=1, rowspan=1, sticky="WE", padx=5, pady=2)
+    reductionsBtn.grid(row=1, column=1, rowspan=1, sticky="WE", padx=5, pady=2)
 
     reductionsBtn = tkinter.Button(secSupersets, text="Automatic reductions (drums)", command=lambda: execute_this('reduce_drums'))
-    reductionsBtn.grid(row=4, column=2, rowspan=1, sticky="WE", padx=5, pady=2)
+    reductionsBtn.grid(row=1, column=2, rowspan=1, sticky="WE", padx=5, pady=2)
 
     animationsBtn = tkinter.Button(secSupersets, text="Automatic animations", command=lambda: execute_this('auto_animations'))
-    animationsBtn.grid(row=4, column=3, rowspan=1, sticky="WE", padx=5, pady=2)
+    animationsBtn.grid(row=1, column=3, rowspan=1, sticky="WE", padx=5, pady=2)
 
     vocalsBtn = tkinter.Button(secSupersets, text="Vocals clean up", command=lambda: execute_this('vocals_cleanup'))
-    vocalsBtn.grid(row=4, column=4, rowspan=1, sticky="WE", padx=5, pady=2)
+    vocalsBtn.grid(row=1, column=4, rowspan=1, sticky="WE", padx=5, pady=2)
 
     generalBtn = tkinter.Button(secSupersets, text="General clean up", command=lambda: execute_this('auto_cleanup'))
-    generalBtn.grid(row=4, column=5, rowspan=1, sticky="WE", padx=5, pady=2)
+    generalBtn.grid(row=1, column=5, rowspan=1, sticky="WE", padx=5, pady=2)
+
+    tkinter.Button(secSupersets, text='Generate Overdrive Phrases',
+                   command=lambda: launch(generate_overdrive_phrases.run, False)).grid(row=2, column=1, rowspan=1, sticky='WE', padx=5, pady=2)
 
     secPGB = tkinter.LabelFrame(root, text=" Pro Guitar/Bass: ")
     secPGB.grid(row=5, columnspan=5, sticky='WE', padx=5, pady=5, ipadx=5, ipady=5)
