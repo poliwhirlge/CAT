@@ -47,18 +47,25 @@ tom_markers_map = {
 bre_notes = [120, 121, 122, 123, 124]
 
 
-def replace_bre_notes(midi_project: MidiProject, drum_track: MidiTrack, drum_fill_markers_to_place):
+def replace_bre_notes(midi_project: MidiProject, drum_track: MidiTrack, drum_fill_markers_to_place, coda_tick: int = -1):
     # remove existing BRE notes
-    # TODO keep BRE on [coda]
-    notes = [n for n in drum_track.notes if n.pitch not in bre_notes]
+    notes = [n for n in drum_track.notes if n.pitch not in bre_notes or (n.pitch in bre_notes and n.tick == coda_tick)]
 
     # add new fill markers
+    n_placed = 0
     for m_idx in drum_fill_markers_to_place:
+        m_start = midi_project.measures[m_idx - 2]
+        m_end = midi_project.measures[m_idx - 1]
+        if m_start.tick_at_start >= coda_tick != -1:
+            continue
+
+        n_placed += 1
         for fill_note in bre_notes:
-            notes.append(Note(tick=midi_project.measures[m_idx - 2].tick_at_start, pitch=fill_note, duration=480 * 4))
+            notes.append(Note(tick=m_start.tick_at_start, pitch=fill_note, duration=m_end.tick_at_start - m_start.tick_at_start))
 
     drum_track.notes = notes
     midi_project.write_midi_track(drum_track)
+    RPR_ShowConsoleMsg(f'Placed {n_placed} drum fill markers.\n')
 
 
 def launch():
@@ -95,17 +102,14 @@ def launch():
             notes_by_tick[note.tick].add(d_note)
 
     practice_sections = events_track.get_practice_sections()
-    RPR_ShowConsoleMsg(f'practice_sections {practice_sections}\n\n')
 
     if len(practice_sections) == 0:
-        RPR_ShowConsoleMsg('No practice sections found, this function works better if there are section markers.\n')
+        RPR_ShowConsoleMsg('No practice sections found, this function works better if section markers are correctly placed.\n')
 
     for section in practice_sections:
         measure_idx, _, _, tick_from_measure_start = midi_project.mbt(section.tick)
         if tick_from_measure_start != 0:
             RPR_ShowConsoleMsg('')
-        section_start_notes = notes_by_tick[section.tick]
-        RPR_ShowConsoleMsg(f'Notes at measure [{midi_project.mbt(section.tick).measure_idx}]: {section_start_notes}\n')
 
     def rate_suitability(m_idx: int, m_tick_start: int):
         notes_m_2 = notes_by_measure[m_idx - 2]
@@ -125,8 +129,6 @@ def launch():
         has_crash = DrumNote.GreenCymbal in note_on_tick or DrumNote.BlueCymbal in note_on_tick
         kick_and_crash = has_kick and has_crash
         is_section_start = any(m_idx == midi_project.mbt(p.tick).measure_idx for p in practice_sections)
-
-        RPR_ShowConsoleMsg(f'M{m_idx}: {building_up} {intensity_drop} {re_entry} {has_kick} {has_crash} \n')
 
         return (
                 (5 if building_up and kick_and_crash else 0) -
@@ -183,8 +185,8 @@ def launch():
                 elif max_score == 0:
                     drum_fill_markers_secondary.append(max_measure)
 
-    # Handle last section
-    # TODO improve algorithm
+    # Handle last section (or entire song if there were no practice sections markers
+    # TODO improve algorithm: use snare/tom density to detect fills,
     start_of_last_section_tick = practice_sections[-1].tick if len(practice_sections) > 0 else min(notes_by_tick.keys())
     end_of_song_tick = max([k for k, v in notes_by_tick.items() if len(v) > 0])
     m_start, *_ = midi_project.mbt(start_of_last_section_tick)
@@ -201,10 +203,6 @@ def launch():
         elif max_score == 0:
             drum_fill_markers_secondary.append(max_measure)
 
-    RPR_ShowConsoleMsg(f'Candidate drum fill markers: {drum_fill_markers_all}\n')
-    only_strong_candidates = [m for m in drum_fill_markers_all if m not in drum_fill_markers_secondary]
-    RPR_ShowConsoleMsg(f'Candidate drum fill markers (strong only): {only_strong_candidates}\n')
-
     drum_fill_markers_to_place = []
 
     for m in drum_fill_markers_all:
@@ -220,6 +218,9 @@ def launch():
             if drum_fill_markers_to_place[-1] + m_between_markers <= m:
                 drum_fill_markers_to_place.append(m)
 
-    RPR_ShowConsoleMsg(f'Placing drum markers : {drum_fill_markers_to_place}\n')
+    coda_events = [e for e in events_track.events if e.event_text == '[coda]']
+    if len(coda_events) > 1:
+        RPR_ShowConsoleMsg(f'Warning: detected multiple [coda] text events on measures {[midi_project.mbt(e.tick).measure_idx for e in coda_events]}\n')
+    coda_tick = coda_events[0].tick if len(coda_events) != 0 else -1
 
-    replace_bre_notes(midi_project, drum_track, drum_fill_markers_to_place)
+    replace_bre_notes(midi_project, drum_track, drum_fill_markers_to_place, coda_tick)

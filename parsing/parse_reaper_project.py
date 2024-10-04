@@ -38,11 +38,9 @@ class MidiProject:
         self.end_event_tick = end_event_tick  # tick of [end] event on EVENTS track
         self.end_of_track = end_of_track  # end of track event in raw string form
         self.measures, self.time_sig_changes = parse_tempo_map(end_event_tick)
-        RPR_ShowConsoleMsg(f'TS changes: {self.time_sig_changes}\n')
-        RPR_ShowConsoleMsg(f'Measures: {self.measures}\n')
         if len(self.measures) == 0:
-            RPR_MB("No time markers found, aborting", "Invalid tempo map", 0)
-            raise Exception("No time markers found, aborting.")
+            RPR_MB('No time markers found, aborting', 'Invalid tempo map', 0)
+            raise Exception('No time markers found, aborting.')
 
     def parse_track(self, track_name):
         if track_name not in self.track_id_map:
@@ -320,8 +318,6 @@ def parse_tempo_map(end_event_tick, ppq: int = 480) -> Tuple[List[Measure], List
             node_array.append(timesignature_numerator)
             node_array.append(timesignature_denominator)
             nodes_array.append(node_array)
-
-    RPR_ShowConsoleMsg(f'node_array: {nodes_array}\n\n')
 
     # Create an array of TS changes: 0. BPM, 1. time signature num, 2. time signature den, 3. ticks passed since 0
     # decimal.Decimal(ticks_passed)
