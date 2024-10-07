@@ -1,4 +1,5 @@
 import math
+import random
 from collections import defaultdict
 from typing import Dict, Set, List
 from dataclasses import dataclass
@@ -11,6 +12,7 @@ from reaper_python import RPR_ShowConsoleMsg
 from parsing.parse_reaper_project import parse_project, MidiProject, MidiTrack
 
 
+overdrive_note = 116
 bre_notes = [120, 121, 122, 123, 124]
 
 
@@ -55,6 +57,7 @@ def run():
         for n in drum_fills_notes:
             start_measure = midi_project.mbt(n.tick).measure_idx
             end_measure = midi_project.mbt(n.tick + n.duration).measure_idx
+            RPR_ShowConsoleMsg(f'{start_measure} - {end_measure} {list(range(start_measure - 1, end_measure + 1))}\n')
             # block 1 measure before and after the drum fill
             invalid_measures.update(list(range(start_measure - 1, end_measure + 1)))
 
@@ -74,14 +77,79 @@ def run():
     max_m = max(last_measures.values())
     song_length = max_m - min_m
     num_divisions = max(target_num_od_phrases.values())
-    divided_song = [round(n / (num_divisions + 1) * song_length) + min_m for n in range(1, num_divisions + 1)]
-    RPR_ShowConsoleMsg(f'divided_song {divided_song}\n')
 
-    RPR_ShowConsoleMsg(f'valid od measures: {valid_measures_map}\n')
-    target_unison_locations = divided_song[::2]
-    for m in target_unison_locations:
-        i = bisect_right(valid_unison_measures, m)
-    unison_measures = [valid_unison_measures[bisect_right(valid_unison_measures, m) - 1]for m in target_unison_locations]
+    def get_bin(m: int) -> int:
+        return math.floor((m - min_m) / (max_m - min_m - 12) * num_divisions)
 
-    RPR_ShowConsoleMsg(f'unison_measures: {unison_measures}\n')
+    all_bins = list(range(num_divisions))
+    unison_bins = [get_bin(m) for m in valid_unison_measures]
+    RPR_ShowConsoleMsg(f'unison_measures binned: {unison_bins}\n')
+    for track in valid_tracks:
+        RPR_ShowConsoleMsg(f'{track.track_name} binned: {[get_bin(m) for m in valid_measures_map[track.track_name]]}\n')
 
+    # choose unison bins
+    curr_bin = None
+    selected_unison_bins = []
+    for b in reversed(unison_bins):
+        if curr_bin is None or curr_bin - 1 > b:
+            selected_unison_bins.append(b)
+            curr_bin = b
+    selected_unison_bins = selected_unison_bins[:target_num_unison_phrases]
+
+    RPR_ShowConsoleMsg(f'selected_unison_bins: {selected_unison_bins}\n')
+    selected_unison_measures = []
+    for b in selected_unison_bins:
+        unison_measures = [m for m in valid_unison_measures if b == get_bin(m)]
+        selected_unison_measures.append(unison_measures[(len(unison_measures) + 1) // 2])
+
+    RPR_ShowConsoleMsg(f'selected_unison_measures: {selected_unison_measures}\n')
+
+    for track in valid_tracks:
+        invalid_measures = set.union(*[set(range(m - 4, m + 5)) for m in selected_unison_measures])
+        valid_measures_map[track.track_name] -= invalid_measures
+
+    RPR_ShowConsoleMsg(f'valid od measures after unisons: {valid_measures_map}\n')
+
+    # add non-unison overdrives
+    non_unison_overdrives: Dict[str, List[int]] = defaultdict(lambda: list())
+    for b in [bin for bin in all_bins if bin not in selected_unison_bins]:
+        for track in valid_tracks:
+            overdrive_candidates = [m for m in valid_measures_map[track.track_name] if b == get_bin(m)]
+            if len(overdrive_candidates) == 0:
+                continue
+            selected_overdrive_measure = overdrive_candidates[(len(overdrive_candidates) + 1) // 2]
+            non_unison_overdrives[track.track_name].append(selected_overdrive_measure)
+            for track_ in valid_tracks:
+                valid_measures_map[track_.track_name].discard(selected_overdrive_measure)
+
+    RPR_ShowConsoleMsg(f'selected_non_unison_measures: {non_unison_overdrives}\n')
+
+    # add some random overdrive measures if not enough measures were picked for some instruments
+    RPR_ShowConsoleMsg(f'temp: {non_unison_overdrives['PART GUITAR']}\n')
+    invalid_measures = set.union(*[set(range(m - 3, m + 4)) for m in non_unison_overdrives['PART GUITAR']])
+    valid_measures_map['PART GUITAR'] -= invalid_measures
+    RPR_ShowConsoleMsg(f'guitar: {valid_measures_map['PART GUITAR']}\n')
+    random.seed(19)
+    non_unison_overdrives['PART GUITAR'].append(random.choice(list(valid_measures_map['PART GUITAR'])))
+    RPR_ShowConsoleMsg(f'guitar: {non_unison_overdrives['PART GUITAR']}\n')
+
+    # place overdrives
+    for track in valid_tracks:
+        replace_overdrives(midi_project, track, non_unison_overdrives[track.track_name] + selected_unison_measures)
+
+
+def replace_overdrives(midi_project: MidiProject, track: MidiTrack, overdrive_measures: List[int]):
+    # remove existing overdrives
+    notes = [n for n in track.notes if n.pitch != overdrive_note]
+
+    # add new fill markers
+    n_placed = 0
+    for m_idx in overdrive_measures:
+        m_start = midi_project.measures[m_idx - 1]
+        m_end = midi_project.measures[m_idx]
+        notes.append(Note(tick=m_start.tick_at_start, pitch=overdrive_note, duration=m_end.tick_at_start - m_start.tick_at_start))
+        n_placed += 1
+
+    track.notes = notes
+    midi_project.write_midi_track(track)
+    RPR_ShowConsoleMsg(f'Placed {n_placed} overdrive markers on track {track.track_name}.\n')
