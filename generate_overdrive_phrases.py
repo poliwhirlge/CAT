@@ -120,18 +120,22 @@ def run():
             selected_overdrive_measure = overdrive_candidates[(len(overdrive_candidates) + 1) // 2]
             non_unison_overdrives[track.track_name].append(selected_overdrive_measure)
             for track_ in valid_tracks:
-                valid_measures_map[track_.track_name].discard(selected_overdrive_measure)
+                if track_ == track:
+                    valid_measures_map[track_.track_name] -= set(range(selected_overdrive_measure - 3, selected_overdrive_measure + 4))
+                else:
+                    # remove measure as a valid overdrive measure from other tracks (to avoid unisons)
+                    valid_measures_map[track_.track_name].discard(selected_overdrive_measure)
 
     RPR_ShowConsoleMsg(f'selected_non_unison_measures: {non_unison_overdrives}\n')
 
-    # add some random overdrive measures if not enough measures were picked for some instruments
-    RPR_ShowConsoleMsg(f'temp: {non_unison_overdrives['PART GUITAR']}\n')
-    invalid_measures = set.union(*[set(range(m - 3, m + 4)) for m in non_unison_overdrives['PART GUITAR']])
-    valid_measures_map['PART GUITAR'] -= invalid_measures
-    RPR_ShowConsoleMsg(f'guitar: {valid_measures_map['PART GUITAR']}\n')
+    # randomly add some random overdrive measures if not enough measures were picked for some instruments
     random.seed(19)
-    non_unison_overdrives['PART GUITAR'].append(random.choice(list(valid_measures_map['PART GUITAR'])))
-    RPR_ShowConsoleMsg(f'guitar: {non_unison_overdrives['PART GUITAR']}\n')
+    for track in valid_tracks:
+        while (len(non_unison_overdrives[track.track_name]) + len(selected_unison_measures) < target_num_od_phrases[track.track_name]
+               and len(valid_measures_map[track.track_name]) > 0):
+            random_overdrive_measure = random.choice(list(valid_measures_map[track.track_name]))
+            non_unison_overdrives[track.track_name].append(random_overdrive_measure)
+            valid_measures_map[track.track_name] -= set(range(random_overdrive_measure - 3, random_overdrive_measure + 4))
 
     # place overdrives
     for track in valid_tracks:
