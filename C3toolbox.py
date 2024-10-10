@@ -344,12 +344,6 @@ def add_objects(array_notes, array_objects):  # Adds objects as notes to the arr
     return array_notes
 
 
-def sections(array_notesevents, what):
-    # Returns an array with subsections in ticks
-    for x in range(0, len(array_notesevents)):
-        note = array_notesevents[x]
-
-
 def level(array, instrument):
     # Returns the selected level, instrument is id
     instrument_name = ''
