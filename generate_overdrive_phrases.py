@@ -100,7 +100,7 @@ def run():
     selected_unison_measures = []
     for b in selected_unison_bins:
         unison_measures = [m for m in valid_unison_measures if b == get_bin(m)]
-        selected_unison_measures.append(unison_measures[(len(unison_measures) + 1) // 2])
+        selected_unison_measures.append(unison_measures[len(unison_measures) // 2])
 
     RPR_ShowConsoleMsg(f'selected_unison_measures: {selected_unison_measures}\n')
 

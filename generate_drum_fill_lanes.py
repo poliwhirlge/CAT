@@ -168,7 +168,7 @@ def launch():
 
         if n_measure_in_section % m_between_markers == 0:
             for candidate_m in range(measure_idx, next_measure_idx, m_between_markers):
-                _, features = suitability[candidate_m]
+                _, features = suitability[candidate_m - 1]
                 if (features['has_kick'] or features['has_snare']) and features['has_crash']:
                     drum_fill_markers_all.append(candidate_m)
                 elif features['is_note']:
