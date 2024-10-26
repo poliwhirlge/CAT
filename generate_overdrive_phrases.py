@@ -117,7 +117,7 @@ def run():
             overdrive_candidates = [m for m in valid_measures_map[track.track_name] if b == get_bin(m)]
             if len(overdrive_candidates) == 0:
                 continue
-            selected_overdrive_measure = overdrive_candidates[(len(overdrive_candidates) + 1) // 2]
+            selected_overdrive_measure = overdrive_candidates[len(overdrive_candidates) // 2]
             non_unison_overdrives[track.track_name].append(selected_overdrive_measure)
             for track_ in valid_tracks:
                 if track_ == track:
