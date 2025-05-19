@@ -166,7 +166,7 @@ if __name__ == '__main__':
     doublepedalBtn = tkinter.Button(secDrums, text="Reduce 2x bass pedal", command=lambda: execute_this('single_pedal'))
     doublepedalBtn.grid(row=2, column=5, rowspan=1, sticky="WE", padx=5, pady=2)
 
-    tkinter.Button(secDrums, text='Generate Drum Overdrive Lanes', command=lambda: launch(generate_drum_fill_lanes.launch, False)).grid(row=2, column=6, rowspan=1, sticky='WE', padx=5, pady=2)
+    tkinter.Button(secDrums, text='Generate Drum Fill/OD Activation Lanes', command=lambda: launch(generate_drum_fill_lanes.launch, False)).grid(row=2, column=6, rowspan=1, sticky='WE', padx=5, pady=2)
 
     secVocals = tkinter.LabelFrame(root, text=" Vocals: ")
     secVocals.grid(row=3, columnspan=5, sticky='WE', \
@@ -247,7 +247,7 @@ if __name__ == '__main__':
     generalBtn = tkinter.Button(secSupersets, text="General clean up", command=lambda: execute_this('auto_cleanup'))
     generalBtn.grid(row=1, column=5, rowspan=1, sticky="WE", padx=5, pady=2)
 
-    tkinter.Button(secSupersets, text='Generate Overdrive Phrases',
+    tkinter.Button(secSupersets, text='Automatic Overdrive and Unison Phrases',
                    command=lambda: launch(generate_overdrive_phrases.run, False)).grid(row=2, column=1, rowspan=1, sticky='WE', padx=5, pady=2)
 
     secPGB = tkinter.LabelFrame(root, text=" Pro Guitar/Bass: ")
