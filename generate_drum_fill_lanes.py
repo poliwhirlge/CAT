@@ -161,7 +161,8 @@ def launch():
         tempo = midi_project.measures[measure_idx - 1].bpm
         m_between_markers = 8 if tempo >= 160 else 4
         if tick_from_measure_start != 0:
-            RPR_ShowConsoleMsg(f'Section {section.event_text} doesn\'t start at the start of the measure ({measure_idx.b})')
+            RPR_ShowConsoleMsg(f'Section {section.event_text} doesn\'t start at the start of the measure ({measure_idx}:{b}), skipping as potential OD activation\n')
+            continue
             # TODO look for first note after section start
 
         n_measure_in_section = next_measure_idx - measure_idx
