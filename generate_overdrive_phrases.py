@@ -63,6 +63,8 @@ def run():
 
         RPR_ShowConsoleMsg(f'invalid drums: {invalid_measures}\n')
         valid_measures_map['PART DRUMS'] -= invalid_measures
+        if len(invalid_measures) == 0:
+            RPR_ShowConsoleMsg(f'Warning: No drum overdrive activation/drum fill notes detected, place those first before placing overdrive phrases.\n')
 
     # remove last 12 measures from valid measures
     for track in valid_tracks:
