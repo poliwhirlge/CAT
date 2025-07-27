@@ -5176,7 +5176,7 @@ def reduce_5lane(instrument, levels, hard, medium, easy, chords, reduceChords, r
         for x in range(0, len(array_events_valid)):
             event = array_events_valid[x]
             if "[mix 3" in event[3]:
-                new_event = list(event)
+                new_event = copy.copy(event)
                 new_event[3] = new_event[3].replace("mix 3", "mix 2")
                 array_events_valid.append(new_event)
 
@@ -5254,7 +5254,7 @@ def reduce_5lane(instrument, levels, hard, medium, easy, chords, reduceChords, r
         for x in range(0, len(array_events_valid)):
             event = array_events_valid[x]
             if "[mix 2" in event[3]:
-                new_event = list(event)
+                new_event = copy.copy(event)
                 new_event[3] = new_event[3].replace("mix 2", "mix 1")
                 array_events_valid.append(new_event)
 
@@ -5338,7 +5338,7 @@ def reduce_5lane(instrument, levels, hard, medium, easy, chords, reduceChords, r
         for x in range(0, len(array_events_valid)):
             event = array_events_valid[x]
             if "[mix 1" in event[3]:
-                new_event = list(event)
+                new_event = copy.copy(event)
                 new_event[3] = new_event[3].replace("mix 1", "mix 0")
                 array_events_valid.append(new_event)
 
