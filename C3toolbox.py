@@ -5,6 +5,7 @@ from C3notes import *
 from cat_commons import Note, Measure, MidiEvent
 import traceback
 import operator
+import copy
 import decimal
 import base64
 import math
