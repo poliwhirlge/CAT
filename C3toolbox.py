@@ -5718,6 +5718,7 @@ def pg_root_notes(instrument, estringlow, astring, dstring, gstring, bstring, es
 
     lastlocation = 0
 
+    x_pg_strings = list(range(96, 102))
     for x in range(0, len(array_notes)):
         note = array_notes[x]
         pitch = note[2]
@@ -5725,10 +5726,9 @@ def pg_root_notes(instrument, estringlow, astring, dstring, gstring, bstring, es
         if location == lastlocation:
             pass
         else:
-            if pitch == 96 or pitch == 97 or pitch == 98 or pitch == 99 or pitch == 100 or pitch == 101:
+            if pitch in x_pg_strings:
                 # It's an expert note, let's add it as a root note
-                velocity = int(str(note[3]), 16)
-                new_note = list(note)
+                new_note = copy.copy(note)
                 openstring = 0
                 count = 0
                 chord = []
@@ -5736,59 +5736,38 @@ def pg_root_notes(instrument, estringlow, astring, dstring, gstring, bstring, es
                     note1 = array_notes[x]
                     note2 = array_notes[y]
                     pitch = note2[2]
-                    if pitch == 96 or pitch == 97 or pitch == 98 or pitch == 99 or pitch == 100 or pitch == 101:
+                    if pitch in x_pg_strings:
                         if note1[1] == note2[1]:
                             count = count + 1
                             chord.append(note2)
                             lastlocation = note2[1]
-                if count > 1:
-                    for item in chord:
-                        if (pitch == 96):
-                            note = item
-                            break
-                    for item in chord:
-                        if (pitch == 97):
-                            note = item
-                            break
-                    for item in chord:
-                        if (pitch == 98):
-                            note = item
-                            break
-                    for item in chord:
-                        if (pitch == 99):
-                            note = item
-                            break
-                    for item in chord:
-                        if (pitch == 100):
-                            note = item
-                            break
-                    for item in chord:
-                        if (pitch == 101):
-                            note = item
 
-                if (note[2] == 96):  # Which string? Which note?
+                lowest_note = min(chord, key=lambda x: x[2])
+
+                if lowest_note[2] == 96:  # Which string? Which note?
                     openstring = 16 + string1
-                elif (note[2] == 97):
+                elif lowest_note[2] == 97:
                     openstring = 9 + string2
-                elif (note[2] == 98):
+                elif lowest_note[2] == 98:
                     openstring = 14 + string3
-                elif (note[2] == 99):
+                elif lowest_note[2] == 99:
                     openstring = 7 + string4
-                elif (note[2] == 100):
+                elif lowest_note[2] == 100:
                     openstring = 11 + string5
-                elif (note[2] == 101):
+                elif lowest_note[2] == 101:
                     openstring = 16 + string6
 
+                velocity = int(str(lowest_note[3]), 16)
                 root = openstring + velocity - 100
                 roothigh = 15
                 rootlow = 4
-                while (root > roothigh):
+                while root > roothigh:
                     root = root - 12
-                    if (root < rootlow):
+                    if root < rootlow:
                         break
-                while (root < rootlow):
+                while root < rootlow:
                     root = root + 12
-                    if (root > roothigh):
+                    if root > roothigh:
                         break
                 new_note[2] = root
 
